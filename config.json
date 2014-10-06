@@ -1,0 +1,28 @@
+{
+	"sources": [
+		{
+			"type": "tail",
+			"path": "/usr/local/nginx/logs/error.log",
+			"format": "(?P<msg>.*)",
+			"tag": "nginx.error"
+		},
+		{
+			"type": "tail",
+			"path": "/usr/local/nginx/logs/access.log",
+			"format": "(?P<test>.*)",
+			"tag": "nginx.access"
+		}
+	],
+
+	"matches": [
+		{
+			"tag": "nginx.*",
+			"type": "forward",
+			"host": "172.19.108.101",
+			"port": 8888,
+			"send_timeout": 3,
+			"heartbeat_interval": 1,
+			"test": 10
+		}
+	]
+}
