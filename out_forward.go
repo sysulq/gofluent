@@ -1,55 +1,40 @@
 package main
 
 import (
-	"os"
 	"fmt"
 	"net"
 	"time"
-	"encoding/json"
 	"github.com/t-k/fluent-logger-golang/fluent"
 )
 
-type configure struct {
-	Host string `json:"host"`
-	Port int    `json:"port"`
-
-	Send_timeout       int `json:"send_timeout"`
-	Heartbeat_interval int `json:"heartbeat_interval"`
-}
-
 type OutputForward struct {
-	config configure
+	Host string
+	Port int
+
+	Send_timeout       int
+	Heartbeat_interval int
 }
 
-func (self *OutputForward) Configure(i int, filePath string) error {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
+func (self *OutputForward) Configure(f map[string]interface{}) error {
 
-	decoder := json.NewDecoder(file)
-	tmp := make([]configure, 1)
+	self.Host = f["host"].(string)
+	self.Port = int(f["port"].(float64))
+	self.Send_timeout = int(f["send_timeout"].(float64))
+	self.Heartbeat_interval = int(f["heartbeat_interval"].(float64))
 
-	err = decoder.Decode(&tmp)
-	if err != nil {
-		fmt.Println("Decode error: ", err)
-	}
-
-	self.config = tmp[i]
-
-	return err
+	return nil
 }
 
 func (self *OutputForward) Start(ctx chan FluentdCtx) error {
 	down := make(chan bool, 1)
 	go self.toFluent(ctx, down)
 
-	tick := time.NewTicker(time.Second * time.Duration(self.config.Heartbeat_interval))
+	tick := time.NewTicker(time.Second * time.Duration(self.Heartbeat_interval))
 
 	for {
       	<-tick.C
     	fmt.Println("doHealthcheck")
-    	self.doHeartbeat(&config, down)
+    	self.doHeartbeat(down)
 	}
 
 }
@@ -57,7 +42,7 @@ func (self *OutputForward) Start(ctx chan FluentdCtx) error {
 func (self *OutputForward) toFluent(ctx chan FluentdCtx, down chan bool) {
 	tag := "debug.test"
 	var logger *fluent.Fluent
-	logger, err := fluent.New(fluent.Config{FluentPort: self.config.Port, FluentHost: self.config.Host})
+	logger, err := fluent.New(fluent.Config{FluentPort: self.Port, FluentHost: self.Host})
 	if err != nil {
 		panic(err)
 	}
@@ -81,8 +66,8 @@ func (self *OutputForward) toFluent(ctx chan FluentdCtx, down chan bool) {
 	}
 }
 
-func (self *OutputForward) doHeartbeat(config *Config, down chan bool) {
-	udpAddr := fmt.Sprintf("%s:%d", self.config.Host, self.config.Port)
+func (self *OutputForward) doHeartbeat(down chan bool) {
+	udpAddr := fmt.Sprintf("%s:%d", self.Host, self.Port)
 	serverAddr, err := net.ResolveUDPAddr("udp", udpAddr)
 	if err != nil {
 		panic(err)
@@ -95,7 +80,7 @@ func (self *OutputForward) doHeartbeat(config *Config, down chan bool) {
 
 	defer c.Close()
 
-	c.SetDeadline(time.Now().Add(time.Second * time.Duration(self.config.Send_timeout)))
+	c.SetDeadline(time.Now().Add(time.Second * time.Duration(self.Send_timeout)))
 	c.Write([]byte("t"))
 
 	b := make([]byte, 1)

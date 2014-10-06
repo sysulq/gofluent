@@ -1,11 +1,13 @@
 package main
 
 import (
+	"os"
 	"fmt"
 )
 
 type Input interface {
-	Start(source Source, ctx chan FluentdCtx) error
+	Start(ctx chan FluentdCtx) error
+	Configure(f map[string]interface{}) error
 }
 
 var inputs = make(map[string]Input)
@@ -23,18 +25,31 @@ func RegisterInput(name string, input Input) {
 }
 
 func NewInput(ctx chan FluentdCtx) {
-	for i := range config.Sources {
-		go func(i int) {
-			input, ok := inputs[config.Sources[i].Type]
+	for _, input_config := range config.Inputs_config {
+		f := input_config.(map[string]interface{})
+		go func(f map[string]interface{}) {
+			intput_type, ok := f["type"].(string)
 			if !ok {
-				fmt.Println("unkown type", config.Sources[i].Type)
+				fmt.Println("no type configured")
+				os.Exit(-1)
 			}
 
-			err := input.Start(config.Sources[i], ctx)
-			if err != nil {
-				input = nil
+			input, ok := inputs[intput_type]
+			if !ok {
+				fmt.Println("unkown type ", intput_type)
+				os.Exit(-1)
 			}
-		}(i)
+
+			err := input.Configure(f)
+			if err != nil {
+				panic(err)
+			}
+
+			err = input.Start(ctx)
+			if err != nil {
+				panic(err)
+			}
+		}(f)
 	}
 
 	return

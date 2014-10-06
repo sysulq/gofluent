@@ -6,27 +6,14 @@ import (
 	"os"
 )
 
-type Source struct {
-	Type   string `json:"type"`
-	Path   string `json:"path"`
-	Format string `json:"format"`
-	Tag    string `json:"tag"`
-}
-
-type Match struct {
-	Tag  string `json:"tag"`
-	Type string `json:"type"`
-
-}
-
 type Config struct {
-	Sources []Source `json:"sources"`
-	Matches []Match  `json:"matches"`
+  Inputs_config []interface{}
+  Outputs_config []interface{}
 }
 
 var config Config
 
-func ReadConf(filePath string) *Config {
+func ReadConf(filePath string) (interface{}) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		panic(err)
@@ -34,16 +21,21 @@ func ReadConf(filePath string) *Config {
 
 	decoder := json.NewDecoder(file)
 
-	err = decoder.Decode(&config)
+  var jsontype interface{}
+	err = decoder.Decode(&jsontype)
 	if err != nil {
 		fmt.Println("Decode error: ", err)
-		os.Exit(1)
-	}
+    panic(err)
+  }
 
-	return &config
+	return jsontype
 }
 
 func init() {
-	config = *ReadConf("config.json")
-  fmt.Println(config)
+	args := ReadConf("config.json").(map[string]interface{})
+  fmt.Println(args)
+
+  config.Inputs_config = args["sources"].([]interface{})
+  config.Outputs_config = args["matches"].([]interface{})
+
 }

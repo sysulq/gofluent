@@ -1,12 +1,13 @@
 package main
 
 import (
+	"os"
 	"fmt"
 )
 
 type Output interface {
 	Start(ctx chan FluentdCtx) error
-	Configure(i int, filePath string) error
+	Configure(f map[string]interface{}) error
 }
 
 var outputs = make(map[string]Output)
@@ -24,23 +25,31 @@ func RegisterOutput(name string, output Output) {
 }
 
 func NewOutput(ctx chan FluentdCtx) error {
-	for i := range config.Matches {
-		go func(i int) {
-			output, ok := outputs[config.Matches[i].Type]
+	for _, output_config := range config.Outputs_config {
+		f := output_config.(map[string]interface{})
+		go func(f map[string]interface{}) {
+			output_type, ok := f["type"].(string)
 			if !ok {
-				fmt.Println("unkown type", config.Matches[i].Type)
+				fmt.Println("no type configured")
+				os.Exit(-1)
 			}
 
-			err := output.Configure(i, "config.json")
+			output, ok := outputs[output_type]
+			if !ok {
+				fmt.Println("unkown type ", output_type)
+				os.Exit(-1)				
+			}
+
+			err := output.Configure(f)
 			if err != nil {
-				output = nil
+				panic(err)
 			}
 
 			err = output.Start(ctx)
 			if err != nil {
-				output = nil
+				panic(err)
 			}
-		}(i)
+		}(f)
 	}
 
 	return nil

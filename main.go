@@ -6,8 +6,7 @@ import (
 )
 
 type FluentdCtx struct {
-	source Source
-	match  Match
+  tag    string
 	data   map[string]string
 }
 
@@ -21,11 +20,14 @@ func main() {
 	for {
     select {
       case ctx := <-ctxInput:
-        for i := range config.Matches {
+        for _, output_config := range config.Outputs_config {
           fmt.Println("ctxInput")
-          tagre := regexp.MustCompile(config.Matches[i].Tag)
+          f := output_config.(map[string]interface{})
+          tag := f["tag"].(string)
 
-          flag := tagre.MatchString(ctx.source.Tag)
+          tagre := regexp.MustCompile(tag)
+
+          flag := tagre.MatchString(ctx.tag)
           if flag == false {
             continue
           }

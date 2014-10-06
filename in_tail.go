@@ -8,16 +8,27 @@ import (
 )
 
 type InputTail struct {
+	path   string
+	format string
+	tag string
 }
 
-func (inpuTail *InputTail) Start(source Source, ctx chan FluentdCtx) error {
+func (self *InputTail) Configure(f map[string]interface{}) error {
+	self.path = f["path"].(string)
+	self.format = f["format"].(string)
+	self.tag = f["tag"].(string)
 
-	t, err := tail.TailFile(source.Path, tail.Config{Follow: true, Location: &tail.SeekInfo{0, os.SEEK_END}})
+	return nil
+}
+
+func (self *InputTail) Start(ctx chan FluentdCtx) error {
+
+	t, err := tail.TailFile(self.path, tail.Config{Follow: true, Location: &tail.SeekInfo{0, os.SEEK_END}})
 	if err != nil {
 		return err
 	}
 
-	re := regexp.MustCompile(source.Format)
+	re := regexp.MustCompile(self.format)
 
 	for line := range t.Lines {
 
@@ -25,7 +36,7 @@ func (inpuTail *InputTail) Start(source Source, ctx chan FluentdCtx) error {
 		for i, name := range re.SubexpNames() {
 			if i != 0 {
 				fmt.Println(line.Text)
-				ctx <- FluentdCtx{source, Match{}, map[string]string{name: text[i]}}
+				ctx <- FluentdCtx{self.tag, map[string]string{name: text[i]}}
 			}
 		}
 	}
