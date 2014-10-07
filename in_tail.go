@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"github.com/ActiveState/tail"
 	"os"
 	"regexp"
@@ -13,6 +13,10 @@ type InputTail struct {
 	tag string
 }
 
+func (self *InputTail) New() interface{} {
+	return &InputTail{}
+}
+
 func (self *InputTail) Configure(f map[string]interface{}) error {
 	self.path = f["path"].(string)
 	self.format = f["format"].(string)
@@ -21,7 +25,7 @@ func (self *InputTail) Configure(f map[string]interface{}) error {
 	return nil
 }
 
-func (self *InputTail) Start(ctx chan FluentdCtx) error {
+func (self *InputTail) Start(ctx chan Context) error {
 
 	t, err := tail.TailFile(self.path, tail.Config{Follow: true, Location: &tail.SeekInfo{0, os.SEEK_END}})
 	if err != nil {
@@ -35,8 +39,7 @@ func (self *InputTail) Start(ctx chan FluentdCtx) error {
 		text := re.FindStringSubmatch(line.Text)
 		for i, name := range re.SubexpNames() {
 			if i != 0 {
-				fmt.Println(line.Text)
-				ctx <- FluentdCtx{self.tag, map[string]string{name: text[i]}}
+				ctx <- Context{self.tag, map[string]string{name: text[i]}}
 			}
 		}
 	}

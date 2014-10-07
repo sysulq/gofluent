@@ -1,18 +1,18 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
  "regexp"
 )
 
-type FluentdCtx struct {
+type Context struct {
   tag    string
 	data   map[string]string
 }
 
 func main() {
-  ctxInput := make(chan FluentdCtx, 10)
-	ctxOutput := make(chan FluentdCtx, 10)
+  ctxInput := make(chan Context, 10)
+	ctxOutput := make(chan Context, 10)
 
 	NewInput(ctxInput)
   NewOutput(ctxOutput)
@@ -21,7 +21,7 @@ func main() {
     select {
       case ctx := <-ctxInput:
         for _, output_config := range config.Outputs_config {
-          fmt.Println("ctxInput")
+
           f := output_config.(map[string]interface{})
           tag := f["tag"].(string)
 

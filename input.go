@@ -6,7 +6,8 @@ import (
 )
 
 type Input interface {
-	Start(ctx chan FluentdCtx) error
+	New() interface{}
+	Start(ctx chan Context) error
 	Configure(f map[string]interface{}) error
 }
 
@@ -24,7 +25,7 @@ func RegisterInput(name string, input Input) {
 	inputs[name] = input
 }
 
-func NewInput(ctx chan FluentdCtx) {
+func NewInput(ctx chan Context) {
 	for _, input_config := range config.Inputs_config {
 		f := input_config.(map[string]interface{})
 		go func(f map[string]interface{}) {
@@ -40,12 +41,14 @@ func NewInput(ctx chan FluentdCtx) {
 				os.Exit(-1)
 			}
 
-			err := input.Configure(f)
+			in := input.New()
+
+			err := in.(Input).Configure(f)
 			if err != nil {
 				panic(err)
 			}
 
-			err = input.Start(ctx)
+			err = in.(Input).Start(ctx)
 			if err != nil {
 				panic(err)
 			}

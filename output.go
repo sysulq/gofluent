@@ -6,7 +6,8 @@ import (
 )
 
 type Output interface {
-	Start(ctx chan FluentdCtx) error
+	New() interface{}
+	Start(ctx chan Context) error
 	Configure(f map[string]interface{}) error
 }
 
@@ -24,7 +25,7 @@ func RegisterOutput(name string, output Output) {
 	outputs[name] = output
 }
 
-func NewOutput(ctx chan FluentdCtx) error {
+func NewOutput(ctx chan Context) error {
 	for _, output_config := range config.Outputs_config {
 		f := output_config.(map[string]interface{})
 		go func(f map[string]interface{}) {
@@ -40,12 +41,15 @@ func NewOutput(ctx chan FluentdCtx) error {
 				os.Exit(-1)				
 			}
 
-			err := output.Configure(f)
+			out := output.New()
+			fmt.Println("out:",out)
+			err := out.(Output).Configure(f)
 			if err != nil {
 				panic(err)
 			}
+			fmt.Println(out)
 
-			err = output.Start(ctx)
+			err = out.(Output).Start(ctx)
 			if err != nil {
 				panic(err)
 			}

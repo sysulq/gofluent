@@ -15,6 +15,9 @@ type OutputForward struct {
 	Heartbeat_interval int
 }
 
+func (self *OutputForward) New() interface{} {
+	return &OutputForward{}
+}
 func (self *OutputForward) Configure(f map[string]interface{}) error {
 
 	self.Host = f["host"].(string)
@@ -25,7 +28,7 @@ func (self *OutputForward) Configure(f map[string]interface{}) error {
 	return nil
 }
 
-func (self *OutputForward) Start(ctx chan FluentdCtx) error {
+func (self *OutputForward) Start(ctx chan Context) error {
 	down := make(chan bool, 1)
 	go self.toFluent(ctx, down)
 
@@ -39,7 +42,7 @@ func (self *OutputForward) Start(ctx chan FluentdCtx) error {
 
 }
 
-func (self *OutputForward) toFluent(ctx chan FluentdCtx, down chan bool) {
+func (self *OutputForward) toFluent(ctx chan Context, down chan bool) {
 	tag := "debug.test"
 	var logger *fluent.Fluent
 	logger, err := fluent.New(fluent.Config{FluentPort: self.Port, FluentHost: self.Host})
