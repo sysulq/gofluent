@@ -16,11 +16,6 @@ func (self *OutputStdout) Configure(f map[string]interface{}) error {
 }
 
 func (self *OutputStdout) Start(ctx chan Context) error {
-	self.Output(ctx)
-	return nil
-}
-
-func (self *OutputStdout) Output(ctx chan Context) error {
 	go func(ctx chan Context) {
 		for {
 			ch := <-ctx

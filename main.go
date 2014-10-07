@@ -1,10 +1,5 @@
 package main
 
-import (
-//"fmt"
-//"regexp"
-)
-
 type Context struct {
 	tag  string
 	data map[string]string

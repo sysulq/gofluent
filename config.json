@@ -21,8 +21,7 @@
 			"host": "172.19.108.101",
 			"port": 8888,
 			"send_timeout": 3,
-			"heartbeat_interval": 1,
-			"test": 10
+			"heartbeat_interval": 1
 		},
 		{
 			"tag": "nginx.access",
