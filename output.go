@@ -1,8 +1,9 @@
 package main
 
 import (
-	"os"
 	"fmt"
+	"os"
+	"regexp"
 )
 
 type Output interface {
@@ -26,9 +27,12 @@ func RegisterOutput(name string, output Output) {
 }
 
 func NewOutput(ctx chan Context) error {
+	outChan := make([]chan Context, 0)
 	for _, output_config := range config.Outputs_config {
 		f := output_config.(map[string]interface{})
-		go func(f map[string]interface{}) {
+		tmpch := make(chan Context)
+		outChan = append(outChan, tmpch)
+		go func(f map[string]interface{}, tmpch chan Context) {
 			output_type, ok := f["type"].(string)
 			if !ok {
 				fmt.Println("no type configured")
@@ -38,24 +42,38 @@ func NewOutput(ctx chan Context) error {
 			output, ok := outputs[output_type]
 			if !ok {
 				fmt.Println("unkown type ", output_type)
-				os.Exit(-1)				
+				os.Exit(-1)
 			}
 
 			out := output.New()
-			fmt.Println("out:",out)
 			err := out.(Output).Configure(f)
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println(out)
 
-			err = out.(Output).Start(ctx)
+			err = out.(Output).Start(tmpch)
 			if err != nil {
 				panic(err)
 			}
-		}(f)
+		}(f, tmpch)
+	}
+
+	for {
+		s := <-ctx
+		for i, o := range outChan {
+			f := config.Outputs_config[i].(map[string]interface{})
+			tag := f["tag"].(string)
+
+			tagre := regexp.MustCompile(tag)
+
+			flag := tagre.MatchString(s.tag)
+			if flag == false {
+				continue
+			}
+
+			o <- s
+		}
 	}
 
 	return nil
 }
-

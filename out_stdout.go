@@ -5,10 +5,9 @@ import (
 )
 
 type OutputStdout struct {
-
 }
 
-func (self *OutputStdout) New() interface{}{
+func (self *OutputStdout) New() interface{} {
 	return &OutputStdout{}
 }
 
@@ -22,7 +21,7 @@ func (self *OutputStdout) Start(ctx chan Context) error {
 }
 
 func (self *OutputStdout) Output(ctx chan Context) error {
-	go func (ctx chan Context) {
+	go func(ctx chan Context) {
 		for {
 			ch := <-ctx
 			fmt.Println(ch.data)
@@ -31,7 +30,6 @@ func (self *OutputStdout) Output(ctx chan Context) error {
 
 	return nil
 }
-
 
 func NewOutputStdout() *OutputStdout {
 	return &OutputStdout{}

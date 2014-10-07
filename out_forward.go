@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/t-k/fluent-logger-golang/fluent"
 	"net"
 	"time"
-	"github.com/t-k/fluent-logger-golang/fluent"
 )
 
 type OutputForward struct {
@@ -35,15 +35,14 @@ func (self *OutputForward) Start(ctx chan Context) error {
 	tick := time.NewTicker(time.Second * time.Duration(self.Heartbeat_interval))
 
 	for {
-      	<-tick.C
-    	fmt.Println("doHealthcheck")
-    	self.doHeartbeat(down)
+		<-tick.C
+		fmt.Println("doHealthcheck")
+		self.doHeartbeat(down)
 	}
 
 }
 
 func (self *OutputForward) toFluent(ctx chan Context, down chan bool) {
-	tag := "debug.test"
 	var logger *fluent.Fluent
 	logger, err := fluent.New(fluent.Config{FluentPort: self.Port, FluentHost: self.Host})
 	if err != nil {
@@ -54,7 +53,7 @@ func (self *OutputForward) toFluent(ctx chan Context, down chan bool) {
 		select {
 		case s := <-ctx:
 			{
-				logger.Post(tag, s.data)
+				logger.Post(s.tag, s.data)
 			}
 		case s := <-down:
 			{

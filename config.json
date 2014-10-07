@@ -4,7 +4,7 @@
 			"type": "tail",
 			"path": "/usr/local/nginx/logs/error.log",
 			"format": "(?P<msg>.*)",
-			"tag": "nginx.error"
+			"tag": "debug.test"
 		},
 		{
 			"type": "tail",
@@ -16,13 +16,17 @@
 
 	"matches": [
 		{
-			"tag": "nginx.*",
+			"tag": "debug.*",
 			"type": "forward",
 			"host": "172.19.108.101",
 			"port": 8888,
 			"send_timeout": 3,
 			"heartbeat_interval": 1,
 			"test": 10
+		},
+		{
+			"tag": "nginx.access",
+			"type": "stdout"
 		}
 	]
 }

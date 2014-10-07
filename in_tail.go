@@ -10,7 +10,7 @@ import (
 type InputTail struct {
 	path   string
 	format string
-	tag string
+	tag    string
 }
 
 func (self *InputTail) New() interface{} {
