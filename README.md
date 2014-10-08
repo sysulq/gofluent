@@ -7,13 +7,16 @@ Introduction
 ========
 
 Fluentd is originally written in CRuby, which has too many dependecies.
+
 I hope fluentd to be simpler and cleaner, as its main feature is simplicity and rubostness.
+
 So here I go, and need your help!
 
 Installation
 ========
 
 Follow steps below and have fun!
+
 ```
 git clone https://github.com/hnlq715/gofluent
 cd gofluent
