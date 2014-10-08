@@ -11,18 +11,18 @@ type Input interface {
 	Configure(f map[string]interface{}) error
 }
 
-var inputs = make(map[string]Input)
+var input_plugins = make(map[string]Input)
 
 func RegisterInput(name string, input Input) {
 	if input == nil {
 		panic("input: Register input is nil")
 	}
 
-	if _, ok := inputs[name]; ok {
+	if _, ok := input_plugins[name]; ok {
 		panic("input: Register called twice for input " + name)
 	}
 
-	inputs[name] = input
+	input_plugins[name] = input
 }
 
 func NewInput(ctx chan Context) {
@@ -35,7 +35,7 @@ func NewInput(ctx chan Context) {
 				os.Exit(-1)
 			}
 
-			input, ok := inputs[intput_type]
+			input, ok := input_plugins[intput_type]
 			if !ok {
 				fmt.Println("unkown type ", intput_type)
 				os.Exit(-1)

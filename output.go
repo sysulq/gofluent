@@ -12,18 +12,18 @@ type Output interface {
 	Configure(f map[string]interface{}) error
 }
 
-var outputs = make(map[string]Output)
+var output_plugins = make(map[string]Output)
 
 func RegisterOutput(name string, output Output) {
 	if output == nil {
 		panic("output: Register output is nil")
 	}
 
-	if _, ok := outputs[name]; ok {
+	if _, ok := output_plugins[name]; ok {
 		panic("output: Register called twice for output " + name)
 	}
 
-	outputs[name] = output
+	output_plugins[name] = output
 }
 
 func NewOutput(ctx chan Context) error {
@@ -39,7 +39,7 @@ func NewOutput(ctx chan Context) error {
 				os.Exit(-1)
 			}
 
-			output, ok := outputs[output_type]
+			output, ok := output_plugins[output_type]
 			if !ok {
 				fmt.Println("unkown type ", output_type)
 				os.Exit(-1)

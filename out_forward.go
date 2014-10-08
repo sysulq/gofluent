@@ -16,14 +16,34 @@ type OutputForward struct {
 }
 
 func (self *OutputForward) New() interface{} {
-	return &OutputForward{}
+	return &OutputForward{ 
+		Host: "localhost",
+		Port: 8888,
+		Send_timeout: 3,
+		Heartbeat_interval: 1}
 }
 func (self *OutputForward) Configure(f map[string]interface{}) error {
+	var value interface{}
 
-	self.Host = f["host"].(string)
-	self.Port = int(f["port"].(float64))
-	self.Send_timeout = int(f["send_timeout"].(float64))
-	self.Heartbeat_interval = int(f["heartbeat_interval"].(float64))
+	value = f["host"]
+	if value != nil {
+		self.Host = value.(string)
+	}
+
+	value = f["port"]
+	if value != nil {
+		self.Port = int(value.(float64))
+	}
+
+	value = f["heartbeat_interval"]
+	if value != nil {
+		self.Heartbeat_interval = int(value.(float64))
+	}
+
+	value = f["send_timeout"]
+	if value != nil {
+		self.Send_timeout = int(value.(float64))
+	}
 
 	return nil
 }

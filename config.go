@@ -33,7 +33,6 @@ func ReadConf(filePath string) interface{} {
 
 func init() {
 	args := ReadConf("config.json").(map[string]interface{})
-	fmt.Println(args)
 
 	config.Inputs_config = args["sources"].([]interface{})
 	config.Outputs_config = args["matches"].([]interface{})
