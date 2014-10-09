@@ -6,16 +6,16 @@ import (
 	"regexp"
 )
 
-type Output interface {
-	New() interface{}
-	Start(ctx chan Context) error
-	Configure(f map[string]interface{}) error
+type output interface {
+	new() interface{}
+	start(ctx chan Context) error
+	configure(f map[string]interface{}) error
 }
 
-var output_plugins = make(map[string]Output)
+var output_plugins = make(map[string]output)
 
-func RegisterOutput(name string, output Output) {
-	if output == nil {
+func RegisterOutput(name string, out output) {
+	if out == nil {
 		panic("output: Register output is nil")
 	}
 
@@ -23,10 +23,10 @@ func RegisterOutput(name string, output Output) {
 		panic("output: Register called twice for output " + name)
 	}
 
-	output_plugins[name] = output
+	output_plugins[name] = out
 }
 
-func NewOutput(ctx chan Context) error {
+func NewOutputs(ctx chan Context) error {
 	outChan := make([]chan Context, 0)
 	for _, output_config := range config.Outputs_config {
 		f := output_config.(map[string]interface{})
@@ -39,19 +39,19 @@ func NewOutput(ctx chan Context) error {
 				os.Exit(-1)
 			}
 
-			output, ok := output_plugins[output_type]
+			output_plugin, ok := output_plugins[output_type]
 			if !ok {
 				fmt.Println("unkown type ", output_type)
 				os.Exit(-1)
 			}
 
-			out := output.New()
-			err := out.(Output).Configure(f)
+			out := output_plugin.new()
+			err := out.(output).configure(f)
 			if err != nil {
 				panic(err)
 			}
 
-			err = out.(Output).Start(tmpch)
+			err = out.(output).start(tmpch)
 			if err != nil {
 				panic(err)
 			}

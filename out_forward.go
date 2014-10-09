@@ -8,51 +8,51 @@ import (
 )
 
 type OutputForward struct {
-	Host string
-	Port int
+	host string
+	port int
 
-	Send_timeout       int
-	Heartbeat_interval int
+	send_timeout       int
+	heartbeat_interval int
 }
 
-func (self *OutputForward) New() interface{} {
+func (self *OutputForward) new() interface{} {
 	return &OutputForward{ 
-		Host: "localhost",
-		Port: 8888,
-		Send_timeout: 3,
-		Heartbeat_interval: 1}
+		host: "localhost",
+		port: 8888,
+		send_timeout: 3,
+		heartbeat_interval: 1}
 }
-func (self *OutputForward) Configure(f map[string]interface{}) error {
+func (self *OutputForward) configure(f map[string]interface{}) error {
 	var value interface{}
 
 	value = f["host"]
 	if value != nil {
-		self.Host = value.(string)
+		self.host = value.(string)
 	}
 
 	value = f["port"]
 	if value != nil {
-		self.Port = int(value.(float64))
+		self.port = int(value.(float64))
 	}
 
 	value = f["heartbeat_interval"]
 	if value != nil {
-		self.Heartbeat_interval = int(value.(float64))
+		self.heartbeat_interval = int(value.(float64))
 	}
 
 	value = f["send_timeout"]
 	if value != nil {
-		self.Send_timeout = int(value.(float64))
+		self.send_timeout = int(value.(float64))
 	}
 
 	return nil
 }
 
-func (self *OutputForward) Start(ctx chan Context) error {
+func (self *OutputForward) start(ctx chan Context) error {
 	down := make(chan bool, 1)
 	go self.toFluent(ctx, down)
 
-	tick := time.NewTicker(time.Second * time.Duration(self.Heartbeat_interval))
+	tick := time.NewTicker(time.Second * time.Duration(self.heartbeat_interval))
 
 	for {
 		<-tick.C
@@ -64,7 +64,7 @@ func (self *OutputForward) Start(ctx chan Context) error {
 
 func (self *OutputForward) toFluent(ctx chan Context, down chan bool) {
 	var logger *fluent.Fluent
-	logger, err := fluent.New(fluent.Config{FluentPort: self.Port, FluentHost: self.Host})
+	logger, err := fluent.New(fluent.Config{FluentPort: self.port, FluentHost: self.host})
 	if err != nil {
 		panic(err)
 	}
@@ -89,7 +89,7 @@ func (self *OutputForward) toFluent(ctx chan Context, down chan bool) {
 }
 
 func (self *OutputForward) doHeartbeat(down chan bool) {
-	udpAddr := fmt.Sprintf("%s:%d", self.Host, self.Port)
+	udpAddr := fmt.Sprintf("%s:%d", self.host, self.port)
 	serverAddr, err := net.ResolveUDPAddr("udp", udpAddr)
 	if err != nil {
 		panic(err)
@@ -102,7 +102,7 @@ func (self *OutputForward) doHeartbeat(down chan bool) {
 
 	defer c.Close()
 
-	c.SetDeadline(time.Now().Add(time.Second * time.Duration(self.Send_timeout)))
+	c.SetDeadline(time.Now().Add(time.Second * time.Duration(self.send_timeout)))
 	c.Write([]byte("t"))
 
 	b := make([]byte, 1)
@@ -114,10 +114,6 @@ func (self *OutputForward) doHeartbeat(down chan bool) {
 	down <- false
 }
 
-func NewOutputForward() *OutputForward {
-	return &OutputForward{}
-}
-
 func init() {
-	RegisterOutput("forward", NewOutputForward())
+	RegisterOutput("forward", &OutputForward{})
 }

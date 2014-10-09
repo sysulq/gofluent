@@ -9,8 +9,8 @@ func main() {
 	ctxInput := make(chan Context, 10)
 	ctxOutput := make(chan Context, 10)
 
-	NewInput(ctxInput)
-	go NewOutput(ctxOutput)
+	go NewInputs(ctxInput)
+	go NewOutputs(ctxOutput)
 
 	for {
 		select {

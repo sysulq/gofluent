@@ -6,6 +6,7 @@
 # Folders
 _obj
 _test
+src
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -19,6 +20,7 @@ _cgo_export.*
 
 _testmain.go
 
+fluent-go
 *.exe
 *.test
 *.prof

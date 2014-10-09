@@ -6,25 +6,38 @@ import (
 	"regexp"
 )
 
-type InputTail struct {
+type inputTail struct {
 	path   string
 	format string
 	tag    string
 }
 
-func (self *InputTail) New() interface{} {
-	return &InputTail{}
+func (self *inputTail) new() interface{} {
+	return &inputTail{}
 }
 
-func (self *InputTail) Configure(f map[string]interface{}) error {
-	self.path = f["path"].(string)
-	self.format = f["format"].(string)
-	self.tag = f["tag"].(string)
+func (self *inputTail) configure(f map[string]interface{}) error {
+	var value interface{}
+
+	value = f["path"]
+	if value != nil {
+		self.path = value.(string)
+	}
+
+	value = f["format"]
+	if value != nil {
+		self.format = value.(string)
+	}
+
+	value = f["tag"]
+	if value != nil {
+		self.tag = value.(string)
+	}
 
 	return nil
 }
 
-func (self *InputTail) Start(ctx chan Context) error {
+func (self *inputTail) start(ctx chan Context) error {
 
 	t, err := tail.TailFile(self.path, tail.Config{Follow: true, Location: &tail.SeekInfo{0, os.SEEK_END}})
 	if err != nil {
@@ -51,10 +64,6 @@ func (self *InputTail) Start(ctx chan Context) error {
 	return err
 }
 
-func NewInputTail() *InputTail {
-	return &InputTail{}
-}
-
 func init() {
-	RegisterInput("tail", NewInputTail())
+	RegisterInput("tail", &inputTail{})
 }

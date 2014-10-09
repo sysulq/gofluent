@@ -7,15 +7,15 @@ import (
 type OutputStdout struct {
 }
 
-func (self *OutputStdout) New() interface{} {
+func (self *OutputStdout) new() interface{} {
 	return &OutputStdout{}
 }
 
-func (self *OutputStdout) Configure(f map[string]interface{}) error {
+func (self *OutputStdout) configure(f map[string]interface{}) error {
 	return nil
 }
 
-func (self *OutputStdout) Start(ctx chan Context) error {
+func (self *OutputStdout) start(ctx chan Context) error {
 	go func(ctx chan Context) {
 		for {
 			ch := <-ctx
@@ -26,10 +26,6 @@ func (self *OutputStdout) Start(ctx chan Context) error {
 	return nil
 }
 
-func NewOutputStdout() *OutputStdout {
-	return &OutputStdout{}
-}
-
 func init() {
-	RegisterOutput("stdout", NewOutputStdout())
+	RegisterOutput("stdout", &OutputStdout{})
 }
