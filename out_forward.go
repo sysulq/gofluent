@@ -2,26 +2,46 @@ package main
 
 import (
 	"fmt"
-	"github.com/t-k/fluent-logger-golang/fluent"
+	"strconv"
 	"net"
 	"time"
+	"log"
+	"bytes"
+	"reflect"
+	"os"
+	"github.com/ugorji/go/codec"
 )
 
 type OutputForward struct {
 	host string
 	port int
 
-	send_timeout       int
-	heartbeat_interval int
+	connect_timeout    int
+	flush_interval     int
+
+	logger  *log.Logger
+	codec   *codec.MsgpackHandle
+	enc     *codec.Encoder
+	conn    net.Conn
+	buffer  bytes.Buffer
 }
 
 func (self *OutputForward) new() interface{} {
+	_codec := codec.MsgpackHandle{}
+	_codec.MapType = reflect.TypeOf(map[string]interface{}(nil))
+	_codec.RawToString = false
+	_codec.StructToArray = true
+
 	return &OutputForward{ 
 		host: "localhost",
 		port: 8888,
-		send_timeout: 3,
-		heartbeat_interval: 1}
+		flush_interval: 5,
+		connect_timeout: 10,
+		codec: &_codec,
+		logger: log.New(os.Stderr, "[journal] ", 0),
+	}
 }
+
 func (self *OutputForward) configure(f map[string]interface{}) error {
 	var value interface{}
 
@@ -35,83 +55,76 @@ func (self *OutputForward) configure(f map[string]interface{}) error {
 		self.port = int(value.(float64))
 	}
 
-	value = f["heartbeat_interval"]
+	value = f["connect_timeout"]
 	if value != nil {
-		self.heartbeat_interval = int(value.(float64))
+		self.connect_timeout = int(value.(float64))
 	}
 
-	value = f["send_timeout"]
+	value = f["flush_interval"]
 	if value != nil {
-		self.send_timeout = int(value.(float64))
+		self.flush_interval = int(value.(float64))
 	}
 
 	return nil
 }
 
 func (self *OutputForward) start(ctx chan Context) error {
-	down := make(chan bool, 1)
-	go self.toFluent(ctx, down)
 
-	tick := time.NewTicker(time.Second * time.Duration(self.heartbeat_interval))
-
-	for {
-		<-tick.C
-		fmt.Println("doHealthcheck")
-		self.doHeartbeat(down)
-	}
-
-}
-
-func (self *OutputForward) toFluent(ctx chan Context, down chan bool) {
-	var logger *fluent.Fluent
-	logger, err := fluent.New(fluent.Config{FluentPort: self.port, FluentHost: self.host})
-	if err != nil {
-		panic(err)
-	}
+	tick := time.NewTicker(time.Second * time.Duration(self.flush_interval))
 
 	for {
 		select {
-		case s := <-ctx:
-			{
-				logger.Post(s.tag, s.data)
-			}
-		case s := <-down:
-			{
-				if s == true {
-					fmt.Println("down")
-					logger.Close()
-				} else {
-					fmt.Println("up")
+			case <-tick.C:{
+				if (self.buffer.Len() > 0) {
+					fmt.Println("flush ", self.buffer.Len())
+					self.flush()
 				}
+			}
+			case s := <- ctx: {
+				self.encodeRecordSet(s)
 			}
 		}
 	}
+
 }
 
-func (self *OutputForward) doHeartbeat(down chan bool) {
-	udpAddr := fmt.Sprintf("%s:%d", self.host, self.port)
-	serverAddr, err := net.ResolveUDPAddr("udp", udpAddr)
+func (self *OutputForward) flush() error{
+	if self.conn == nil {
+		conn, err := net.DialTimeout("tcp", self.host + ":" + strconv.Itoa(self.port), time.Second * time.Duration(self.connect_timeout))
+		if err != nil {
+			self.logger.Printf("%#v", err.Error())
+			return err
+		} else {
+			self.conn = conn
+		}
+	}
+
+	n, err := self.buffer.WriteTo(self.conn)
 	if err != nil {
-		panic(err)
+		self.logger.Printf("Write failed. size: %d, buf size: %d, error: %#v", n, self.buffer.Len(), err.Error())
+		self.conn = nil
+		return err
+	}
+	if n > 0 {
+		self.logger.Printf("Forwarded: %d bytes (left: %d bytes)\n", n, self.buffer.Len())
 	}
 
-	c, err := net.DialUDP("udp", nil, serverAddr)
+	self.conn.Close()
+	self.conn = nil
+	return nil
+
+}
+
+func (self *OutputForward) encodeRecordSet(ctx Context) error {
+	v := []interface{} { ctx.tag, ctx.record }
+	if self.enc == nil {
+		self.enc = codec.NewEncoder(&self.buffer, self.codec)
+	}
+	err := self.enc.Encode(v)
 	if err != nil {
-		panic(err)
+		return err
 	}
-
-	defer c.Close()
-
-	c.SetDeadline(time.Now().Add(time.Second * time.Duration(self.send_timeout)))
-	c.Write([]byte("t"))
-
-	b := make([]byte, 1)
-	if _, err := c.Read(b); err != nil {
-		down <- true
-		return
-	}
-
-	down <- false
+	return err
 }
 
 func init() {

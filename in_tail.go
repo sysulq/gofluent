@@ -3,7 +3,11 @@ package main
 import (
 	"github.com/ActiveState/tail"
 	"os"
+	"time"
 	"regexp"
+	"fmt"
+	"strings"
+	"encoding/json"
 )
 
 type inputTail struct {
@@ -44,16 +48,42 @@ func (self *inputTail) start(ctx chan Context) error {
 		return err
 	}
 
-	re := regexp.MustCompile(self.format)
+	var re regexp.Regexp
+	if string(self.format[0]) == string("/") || string(self.format[len(self.format)-1]) == string("/") {
+		fmt.Println(strings.Trim(self.format, "/"))
+		re = *regexp.MustCompile(self.format)
+		self.format = "regexp"
+	} else if self.format == "json" {
+
+	}
 
 	for line := range t.Lines {
 
-		text := re.FindStringSubmatch(line.Text)
-		for i, name := range re.SubexpNames() {
-			if i != 0 {
-				ctx <- Context{self.tag, map[string]string{name: text[i]}}
+		//text := re.FindSubmatch([]byte(line.Text))
+		timeUnix := time.Now().Unix()
+		data := make(map[string]string)
+
+		if self.format == "regexp" {
+			text := re.FindSubmatch([]byte(line.Text))
+			if text == nil {
+				continue
+			}
+
+			for i, name := range re.SubexpNames() {
+				if i != 0 {
+					fmt.Println(name, string(text[i]))
+					data[name] = string(text[i])
+				}
+			}
+		} else if self.format == "json" {
+			err := json.Unmarshal([]byte(line.Text), &data)
+			if err != nil {
+				continue
 			}
 		}
+
+		record := Record{timeUnix, data}
+		ctx <- Context{self.tag, record}
 	}
 
 	err = t.Wait()

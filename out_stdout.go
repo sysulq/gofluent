@@ -19,7 +19,7 @@ func (self *OutputStdout) start(ctx chan Context) error {
 	go func(ctx chan Context) {
 		for {
 			ch := <-ctx
-			fmt.Println(ch.data)
+			fmt.Println(ch.record)
 		}
 	}(ctx)
 

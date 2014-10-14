@@ -2,14 +2,14 @@
 	"sources": [
 		{
 			"type": "tail",
-			"path": "/usr/local/nginx/logs/error.log",
+			"path": "test.json",
 			"format": "(?P<msg>.*)",
 			"tag": "debug.test"
 		},
 		{
 			"type": "tail",
-			"path": "/usr/local/nginx/logs/access.log",
-			"format": "(?P<test>.*)",
+			"path": "test.json",
+			"format": "json",
 			"tag": "nginx.access"
 		}
 	],
@@ -24,7 +24,10 @@
 		},
 		{
 			"tag": "nginx.access",
-			"type": "stdout"
+			"host": "14.17.108.78",
+			"auth": "duowan09876",
+			"type": "httpsqs",
+			"debug": false
 		}
 	]
 }
