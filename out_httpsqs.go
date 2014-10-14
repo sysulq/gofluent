@@ -1,10 +1,13 @@
 package main
 
 import (
-	"fmt"
-	//"time"
+	"bytes"
 	"encoding/json"
-	httpsqs "github.com/crosstime1986/go-httpsqs"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"time"
 )
 
 type OutputHttpsqs struct {
@@ -14,6 +17,8 @@ type OutputHttpsqs struct {
 	auth           string
 	flush_interval int
 	debug          bool
+	buffer         []Context
+	client         *http.Client
 }
 
 func (self *OutputHttpsqs) new() interface{} {
@@ -23,7 +28,7 @@ func (self *OutputHttpsqs) new() interface{} {
 		port:           1218,
 		auth:           "testauth",
 		flush_interval: 5,
-		debug:          false,
+		client:         &http.Client{},
 	}
 }
 
@@ -45,14 +50,9 @@ func (self *OutputHttpsqs) configure(f map[string]interface{}) error {
 		self.auth = value.(string)
 	}
 
-	value = f["auth"]
+	value = f["flush_interval"]
 	if value != nil {
 		self.flush_interval = int(value.(float64))
-	}
-
-	value = f["debug"]
-	if value != nil {
-		self.debug = value.(bool)
 	}
 
 	return nil
@@ -60,24 +60,44 @@ func (self *OutputHttpsqs) configure(f map[string]interface{}) error {
 
 func (self *OutputHttpsqs) start(ctx chan Context) error {
 
-	q := httpsqs.NewClient(self.host, self.port, self.auth, self.debug)
+	tick := time.NewTicker(time.Second * time.Duration(self.flush_interval))
 
 	for {
 		select {
+		case <-tick.C:
+			{
+				if len(self.buffer) > 0 {
+					fmt.Println("flush ", len(self.buffer))
+					self.flush()
+				}
+			}
 		case s := <-ctx:
 			{
-				b, err := json.Marshal(s.record.data)
-				if err != nil {
-					continue
-				}
 
-				res, err := q.Puts(s.tag, string(b))
-				if err != nil || res != "HTTPSQS_PUT_OK" {
-					fmt.Println(err)
-				}
+				self.buffer = append(self.buffer, s)
 			}
 		}
 	}
+}
+
+func (self *OutputHttpsqs) flush() {
+	for _, v := range self.buffer {
+		url := fmt.Sprintf("http://%s:%d/?name=%s&opt=put&auth=%s", self.host, self.port, v.tag, self.auth)
+		b, err := json.Marshal(v.record.data)
+		if err != nil {
+			continue
+		}
+
+		resp, err := self.client.Post(url, "application/json", bytes.NewBuffer(b))
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(resp)
+		io.Copy(ioutil.Discard, resp.Body)
+		resp.Body.Close()
+	}
+
+	self.buffer = self.buffer[0:0]
 
 }
 
