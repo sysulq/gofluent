@@ -94,9 +94,9 @@ func (self *outputHttpsqs) flush() {
 	for k, v := range self.buffer {
 		url := fmt.Sprintf("http://%s:%d/?name=%s&opt=put&auth=%s", self.host, self.port, k, self.auth)
 
-		Log(url, string(v))
-
 		v = append(v, byte(']'))
+
+		Log("url:", url, "body:", string(v))
 
 		resp, err := self.client.Post(url, "application/json", bytes.NewReader(v))
 		if err != nil {
