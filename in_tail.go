@@ -48,7 +48,7 @@ func (self *inputTail) configure(f map[string]interface{}) error {
 
 		str, err := ioutil.ReadFile(self.pos_file)
 		if err != nil {
-			fmt.Println(err)
+			Log(err)
 		}
 
 		offset, _ := strconv.Atoi(string(str))
@@ -94,7 +94,7 @@ func (self *inputTail) start(ctx chan Context) error {
 
 			for i, name := range re.SubexpNames() {
 				if i != 0 {
-					fmt.Println(name, string(text[i]))
+					Log(name, string(text[i]))
 					data[name] = string(text[i])
 				}
 			}
@@ -110,18 +110,16 @@ func (self *inputTail) start(ctx chan Context) error {
 			fmt.Println("Tell return error: ", err)
 		}
 
-		fmt.Println(offset)
-
 		str := strconv.Itoa(int(offset))
 
 		f, err := os.OpenFile(self.pos_file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 		if err != nil {
-			fmt.Println(err)
+			Log(err)
 		}
 
 		_, err = f.WriteString(str)
 		if err != nil {
-			fmt.Println(err)
+			Log(err)
 		}
 
 		f.Close()

@@ -16,11 +16,11 @@ var output_plugins = make(map[string]output)
 
 func RegisterOutput(name string, out output) {
 	if out == nil {
-		panic("output: Register output is nil")
+		Log("output: Register output is nil")
 	}
 
 	if _, ok := output_plugins[name]; ok {
-		panic("output: Register called twice for output " + name)
+		Log("output: Register called twice for output " + name)
 	}
 
 	output_plugins[name] = out
@@ -41,19 +41,19 @@ func NewOutputs(ctx chan Context) error {
 
 			output_plugin, ok := output_plugins[output_type]
 			if !ok {
-				fmt.Println("unkown type ", output_type)
+				Log("unkown type ", output_type)
 				os.Exit(-1)
 			}
 
 			out := output_plugin.new()
 			err := out.(output).configure(f)
 			if err != nil {
-				panic(err)
+				Log(err)
 			}
 
 			err = out.(output).start(tmpch)
 			if err != nil {
-				panic(err)
+				Log(err)
 			}
 		}(f, tmpch)
 	}

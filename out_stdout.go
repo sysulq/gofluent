@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 type OutputStdout struct {
 }
 
@@ -19,7 +15,7 @@ func (self *OutputStdout) start(ctx chan Context) error {
 	go func(ctx chan Context) {
 		for {
 			ch := <-ctx
-			fmt.Println(ch.record)
+			Log(ch.record)
 		}
 	}(ctx)
 

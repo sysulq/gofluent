@@ -2,11 +2,9 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/ugorji/go/codec"
 	"log"
 	"net"
-	"os"
 	"reflect"
 	"strconv"
 	"time"
@@ -38,7 +36,6 @@ func (self *OutputForward) new() interface{} {
 		flush_interval:  5,
 		connect_timeout: 10,
 		codec:           &_codec,
-		logger:          log.New(os.Stderr, "[journal] ", 0),
 	}
 }
 
@@ -77,7 +74,7 @@ func (self *OutputForward) start(ctx chan Context) error {
 		case <-tick.C:
 			{
 				if self.buffer.Len() > 0 {
-					fmt.Println("flush ", self.buffer.Len())
+					Log("flush ", self.buffer.Len())
 					self.flush()
 				}
 			}
@@ -94,7 +91,7 @@ func (self *OutputForward) flush() error {
 	if self.conn == nil {
 		conn, err := net.DialTimeout("tcp", self.host+":"+strconv.Itoa(self.port), time.Second*time.Duration(self.connect_timeout))
 		if err != nil {
-			self.logger.Printf("%#v", err.Error())
+			Log("%#v", err.Error())
 			return err
 		} else {
 			self.conn = conn
@@ -105,12 +102,12 @@ func (self *OutputForward) flush() error {
 
 	n, err := self.buffer.WriteTo(self.conn)
 	if err != nil {
-		self.logger.Printf("Write failed. size: %d, buf size: %d, error: %#v", n, self.buffer.Len(), err.Error())
+		Log("Write failed. size: %d, buf size: %d, error: %#v", n, self.buffer.Len(), err.Error())
 		self.conn = nil
 		return err
 	}
 	if n > 0 {
-		self.logger.Printf("Forwarded: %d bytes (left: %d bytes)\n", n, self.buffer.Len())
+		Log("Forwarded: %d bytes (left: %d bytes)\n", n, self.buffer.Len())
 	}
 
 	self.conn = nil

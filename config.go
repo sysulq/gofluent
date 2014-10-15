@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 )
 
@@ -16,7 +15,7 @@ var config Config
 func ReadConf(filePath string) interface{} {
 	file, err := os.Open(filePath)
 	if err != nil {
-		panic(err)
+		Log(err)
 	}
 
 	decoder := json.NewDecoder(file)
@@ -24,8 +23,7 @@ func ReadConf(filePath string) interface{} {
 	var jsontype interface{}
 	err = decoder.Decode(&jsontype)
 	if err != nil {
-		fmt.Println("Decode error: ", err)
-		panic(err)
+		Log("Decode error: ", err)
 	}
 
 	return jsontype

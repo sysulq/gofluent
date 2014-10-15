@@ -1,13 +1,13 @@
 package main
 
 type Context struct {
-	tag  string
+	tag    string
 	record Record
 }
 
 type Record struct {
-  timestamp int64
-  data      map[string]string
+	timestamp int64
+	data      map[string]string
 }
 
 func main() {

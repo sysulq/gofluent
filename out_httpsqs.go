@@ -68,7 +68,6 @@ func (self *outputHttpsqs) start(ctx chan Context) error {
 		case <-tick.C:
 			{
 				if len(self.buffer) > 0 {
-					fmt.Println("flush ", len(self.buffer))
 					self.flush()
 				}
 			}
@@ -95,15 +94,18 @@ func (self *outputHttpsqs) flush() {
 	for k, v := range self.buffer {
 		url := fmt.Sprintf("http://%s:%d/?name=%s&opt=put&auth=%s", self.host, self.port, k, self.auth)
 
-		fmt.Println(k, string(v))
+		Log(url, string(v))
+
 		v = append(v, byte(']'))
 
 		resp, err := self.client.Post(url, "application/json", bytes.NewReader(v))
 		if err != nil {
-			fmt.Println(err)
+			Log(err)
 			return
 		}
-		fmt.Println(resp)
+
+		Log("resp:", *resp)
+
 		io.Copy(ioutil.Discard, resp.Body)
 		resp.Body.Close()
 		self.buffer[k] = self.buffer[k][0:0]
