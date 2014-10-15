@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ActiveState/tail"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type inputTail struct {
@@ -45,19 +45,14 @@ func (self *inputTail) configure(f map[string]interface{}) error {
 	value = f["pos_file"]
 	if value != nil {
 		self.pos_file = value.(string)
-		var str string
-		var offset int
-		file, err := os.Open(self.pos_file) // For read access.
+
+		str, err := ioutil.ReadFile(self.pos_file)
 		if err != nil {
 			fmt.Println(err)
-		} else {
-			_, err := file.Read([]byte(str))
-			if err != nil {
-				fmt.Println(err)
-			}
-			offset, _ = strconv.Atoi(str)
-			self.offset = int64(offset)
 		}
+
+		offset, _ := strconv.Atoi(string(str))
+		self.offset = int64(offset)
 	}
 
 	return nil
@@ -86,16 +81,9 @@ func (self *inputTail) start(ctx chan Context) error {
 
 	}
 
-	f, err := os.OpenFile(self.pos_file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer f.Close()
-
 	for line := range t.Lines {
 
-		//text := re.FindSubmatch([]byte(line.Text))
-		timeUnix := time.Now().Unix()
+		timeUnix := line.Time.Unix()
 		data := make(map[string]string)
 
 		if self.format == "regexp" {
@@ -126,10 +114,17 @@ func (self *inputTail) start(ctx chan Context) error {
 
 		str := strconv.Itoa(int(offset))
 
+		f, err := os.OpenFile(self.pos_file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		_, err = f.WriteString(str)
 		if err != nil {
 			fmt.Println(err)
 		}
+
+		f.Close()
 
 		record := Record{timeUnix, data}
 		ctx <- Context{self.tag, record}

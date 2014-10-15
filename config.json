@@ -5,17 +5,17 @@
 			"path": "test.json",
 			"format": "json",
 			"pos_file": "/tmp/test.pos",
-			"tag": "nginx.access"
+			"tag": "log.ysec_kagent"
 		}
 	],
 
 	"matches": [
 		{
-			"tag": "nginx.access",
-			"host": "14.17.108.78",
+			"tag": "log.*",
+			"host": "security.yy.com",
 			"auth": "duowan09876",
 			"type": "httpsqs",
-			"debug": false
+			"flush_interval": 5
 		}
 	]
 }

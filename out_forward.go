@@ -1,29 +1,29 @@
 package main
 
 import (
-	"fmt"
-	"strconv"
-	"net"
-	"time"
-	"log"
 	"bytes"
-	"reflect"
-	"os"
+	"fmt"
 	"github.com/ugorji/go/codec"
+	"log"
+	"net"
+	"os"
+	"reflect"
+	"strconv"
+	"time"
 )
 
 type OutputForward struct {
 	host string
 	port int
 
-	connect_timeout    int
-	flush_interval     int
+	connect_timeout int
+	flush_interval  int
 
-	logger  *log.Logger
-	codec   *codec.MsgpackHandle
-	enc     *codec.Encoder
-	conn    net.Conn
-	buffer  bytes.Buffer
+	logger *log.Logger
+	codec  *codec.MsgpackHandle
+	enc    *codec.Encoder
+	conn   net.Conn
+	buffer bytes.Buffer
 }
 
 func (self *OutputForward) new() interface{} {
@@ -32,13 +32,13 @@ func (self *OutputForward) new() interface{} {
 	_codec.RawToString = false
 	_codec.StructToArray = true
 
-	return &OutputForward{ 
-		host: "localhost",
-		port: 8888,
-		flush_interval: 5,
+	return &OutputForward{
+		host:            "localhost",
+		port:            8888,
+		flush_interval:  5,
 		connect_timeout: 10,
-		codec: &_codec,
-		logger: log.New(os.Stderr, "[journal] ", 0),
+		codec:           &_codec,
+		logger:          log.New(os.Stderr, "[journal] ", 0),
 	}
 }
 
@@ -74,13 +74,15 @@ func (self *OutputForward) start(ctx chan Context) error {
 
 	for {
 		select {
-			case <-tick.C:{
-				if (self.buffer.Len() > 0) {
+		case <-tick.C:
+			{
+				if self.buffer.Len() > 0 {
 					fmt.Println("flush ", self.buffer.Len())
 					self.flush()
 				}
 			}
-			case s := <- ctx: {
+		case s := <-ctx:
+			{
 				self.encodeRecordSet(s)
 			}
 		}
@@ -88,9 +90,9 @@ func (self *OutputForward) start(ctx chan Context) error {
 
 }
 
-func (self *OutputForward) flush() error{
+func (self *OutputForward) flush() error {
 	if self.conn == nil {
-		conn, err := net.DialTimeout("tcp", self.host + ":" + strconv.Itoa(self.port), time.Second * time.Duration(self.connect_timeout))
+		conn, err := net.DialTimeout("tcp", self.host+":"+strconv.Itoa(self.port), time.Second*time.Duration(self.connect_timeout))
 		if err != nil {
 			self.logger.Printf("%#v", err.Error())
 			return err
@@ -98,6 +100,8 @@ func (self *OutputForward) flush() error{
 			self.conn = conn
 		}
 	}
+
+	defer self.conn.Close()
 
 	n, err := self.buffer.WriteTo(self.conn)
 	if err != nil {
@@ -109,14 +113,13 @@ func (self *OutputForward) flush() error{
 		self.logger.Printf("Forwarded: %d bytes (left: %d bytes)\n", n, self.buffer.Len())
 	}
 
-	self.conn.Close()
 	self.conn = nil
 	return nil
 
 }
 
 func (self *OutputForward) encodeRecordSet(ctx Context) error {
-	v := []interface{} { ctx.tag, ctx.record }
+	v := []interface{}{ctx.tag, ctx.record}
 	if self.enc == nil {
 		self.enc = codec.NewEncoder(&self.buffer, self.codec)
 	}

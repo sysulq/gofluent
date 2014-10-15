@@ -10,29 +10,30 @@ import (
 	"time"
 )
 
-type OutputHttpsqs struct {
+type outputHttpsqs struct {
 	host string
 	port int32
 
 	auth           string
 	flush_interval int
 	debug          bool
-	buffer         []Context
+	buffer         map[string][]byte
 	client         *http.Client
 }
 
-func (self *OutputHttpsqs) new() interface{} {
+func (self *outputHttpsqs) new() interface{} {
 
-	return &OutputHttpsqs{
+	return &outputHttpsqs{
 		host:           "localhost",
 		port:           1218,
 		auth:           "testauth",
 		flush_interval: 5,
 		client:         &http.Client{},
+		buffer:         make(map[string][]byte, 0),
 	}
 }
 
-func (self *OutputHttpsqs) configure(f map[string]interface{}) error {
+func (self *outputHttpsqs) configure(f map[string]interface{}) error {
 	var value interface{}
 
 	value = f["host"]
@@ -58,7 +59,7 @@ func (self *OutputHttpsqs) configure(f map[string]interface{}) error {
 	return nil
 }
 
-func (self *OutputHttpsqs) start(ctx chan Context) error {
+func (self *outputHttpsqs) start(ctx chan Context) error {
 
 	tick := time.NewTicker(time.Second * time.Duration(self.flush_interval))
 
@@ -73,34 +74,43 @@ func (self *OutputHttpsqs) start(ctx chan Context) error {
 			}
 		case s := <-ctx:
 			{
+				b, err := json.Marshal(s.record.data)
+				if err != nil {
+					continue
+				}
 
-				self.buffer = append(self.buffer, s)
+				if len(self.buffer) == 0 {
+					self.buffer[s.tag] = append(self.buffer[s.tag], byte('['))
+				} else if len(self.buffer) > 0 {
+					self.buffer[s.tag] = append(self.buffer[s.tag], byte(','))
+				}
+
+				self.buffer[s.tag] = append(self.buffer[s.tag], b...)
 			}
 		}
 	}
 }
 
-func (self *OutputHttpsqs) flush() {
-	for _, v := range self.buffer {
-		url := fmt.Sprintf("http://%s:%d/?name=%s&opt=put&auth=%s", self.host, self.port, v.tag, self.auth)
-		b, err := json.Marshal(v.record.data)
-		if err != nil {
-			continue
-		}
+func (self *outputHttpsqs) flush() {
+	for k, v := range self.buffer {
+		url := fmt.Sprintf("http://%s:%d/?name=%s&opt=put&auth=%s", self.host, self.port, k, self.auth)
 
-		resp, err := self.client.Post(url, "application/json", bytes.NewBuffer(b))
+		fmt.Println(k, string(v))
+		v = append(v, byte(']'))
+
+		resp, err := self.client.Post(url, "application/json", bytes.NewReader(v))
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
 		fmt.Println(resp)
 		io.Copy(ioutil.Discard, resp.Body)
 		resp.Body.Close()
+		self.buffer[k] = self.buffer[k][0:0]
+		delete(self.buffer, k)
 	}
-
-	self.buffer = self.buffer[0:0]
-
 }
 
 func init() {
-	RegisterOutput("httpsqs", &OutputHttpsqs{})
+	RegisterOutput("httpsqs", &outputHttpsqs{})
 }
