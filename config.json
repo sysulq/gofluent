@@ -3,25 +3,13 @@
 		{
 			"type": "tail",
 			"path": "test.json",
-			"format": "(?P<msg>.*)",
-			"tag": "debug.test"
-		},
-		{
-			"type": "tail",
-			"path": "test.json",
 			"format": "json",
+			"pos_file": "/tmp/test.pos",
 			"tag": "nginx.access"
 		}
 	],
 
 	"matches": [
-		{
-			"tag": "debug.*",
-			"type": "forward",
-			"host": "172.19.108.101",
-			"port": 8888,
-			"heartbeat_interval": 1
-		},
 		{
 			"tag": "nginx.access",
 			"host": "14.17.108.78",

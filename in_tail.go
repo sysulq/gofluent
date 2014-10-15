@@ -1,23 +1,27 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/ActiveState/tail"
 	"os"
-	"time"
 	"regexp"
-	"fmt"
+	"strconv"
 	"strings"
-	"encoding/json"
+	"time"
 )
 
 type inputTail struct {
-	path   string
-	format string
-	tag    string
+	path     string
+	format   string
+	tag      string
+	pos_file string
+
+	offset int64
 }
 
 func (self *inputTail) new() interface{} {
-	return &inputTail{}
+	return &inputTail{offset: 0}
 }
 
 func (self *inputTail) configure(f map[string]interface{}) error {
@@ -38,12 +42,37 @@ func (self *inputTail) configure(f map[string]interface{}) error {
 		self.tag = value.(string)
 	}
 
+	value = f["pos_file"]
+	if value != nil {
+		self.pos_file = value.(string)
+		var str string
+		var offset int
+		file, err := os.Open(self.pos_file) // For read access.
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			_, err := file.Read([]byte(str))
+			if err != nil {
+				fmt.Println(err)
+			}
+			offset, _ = strconv.Atoi(str)
+			self.offset = int64(offset)
+		}
+	}
+
 	return nil
 }
 
 func (self *inputTail) start(ctx chan Context) error {
 
-	t, err := tail.TailFile(self.path, tail.Config{Follow: true, Location: &tail.SeekInfo{0, os.SEEK_END}})
+	var seek int
+	if self.offset > 0 {
+		seek = os.SEEK_SET
+	} else {
+		seek = os.SEEK_END
+	}
+
+	t, err := tail.TailFile(self.path, tail.Config{Follow: true, Location: &tail.SeekInfo{int64(self.offset), seek}})
 	if err != nil {
 		return err
 	}
@@ -56,6 +85,12 @@ func (self *inputTail) start(ctx chan Context) error {
 	} else if self.format == "json" {
 
 	}
+
+	f, err := os.OpenFile(self.pos_file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer f.Close()
 
 	for line := range t.Lines {
 
@@ -80,6 +115,20 @@ func (self *inputTail) start(ctx chan Context) error {
 			if err != nil {
 				continue
 			}
+		}
+
+		offset, err := t.Tell()
+		if err != nil {
+			fmt.Println("Tell return error: ", err)
+		}
+
+		fmt.Println(offset)
+
+		str := strconv.Itoa(int(offset))
+
+		_, err = f.WriteString(str)
+		if err != nil {
+			fmt.Println(err)
 		}
 
 		record := Record{timeUnix, data}
