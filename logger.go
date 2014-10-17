@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"log"
 	"os"
 )
@@ -12,12 +13,13 @@ var (
 )
 
 func init() {
-	logFileName = "error.log"
+	logFileName := flag.String("log", "error.log", "log filepath")
+
 	logChannel = make(chan interface{})
 
 	go func(logChannel <-chan interface{}) {
 		for msg := range logChannel {
-			f, err := os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, os.ModePerm)
+			f, err := os.OpenFile(*logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, os.ModePerm)
 			if err != nil {
 				// TODO: If this panics it would break the goroutine, would nothing
 				// be logged ever again?

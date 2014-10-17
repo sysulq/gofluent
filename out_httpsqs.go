@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,6 +18,7 @@ type outputHttpsqs struct {
 	auth           string
 	flush_interval int
 	debug          bool
+	gzip           bool
 	buffer         map[string][]byte
 	client         *http.Client
 }
@@ -28,6 +30,7 @@ func (self *outputHttpsqs) new() interface{} {
 		port:           1218,
 		auth:           "testauth",
 		flush_interval: 5,
+		gzip:           false,
 		client:         &http.Client{},
 		buffer:         make(map[string][]byte, 0),
 	}
@@ -54,6 +57,11 @@ func (self *outputHttpsqs) configure(f map[string]interface{}) error {
 	value = f["flush_interval"]
 	if value != nil {
 		self.flush_interval = int(value.(float64))
+	}
+
+	value = f["gzip"]
+	if value != nil {
+		self.gzip = value.(bool)
 	}
 
 	return nil
@@ -95,13 +103,26 @@ func (self *outputHttpsqs) flush() {
 		url := fmt.Sprintf("http://%s:%d/?name=%s&opt=put&auth=%s", self.host, self.port, k, self.auth)
 
 		v = append(v, byte(']'))
+		Log("url:", url, ", buf length:", len(v))
+		var buf bytes.Buffer
+		var req *http.Request
 
-		Log("url:", url, "body:", string(v))
+		if self.gzip == true {
+			gzw := gzip.NewWriter(&buf)
+			gzw.Write([]byte(v))
+			gzw.Close()
+			req, _ = http.NewRequest("POST", url, bytes.NewReader(buf.Bytes()))
+		} else {
+			req, _ = http.NewRequest("POST", url, bytes.NewReader([]byte(v)))
+		}
 
-		resp, err := self.client.Post(url, "application/json", bytes.NewReader(v))
+		req.Header.Add("Content-Encoding", "gzip")
+		req.Header.Add("Content-Type", "application/json")
+
+		resp, err := self.client.Do(req)
 		if err != nil {
-			Log(err)
-			return
+			Log("post failed:", err)
+			continue
 		}
 
 		Log("resp:", *resp)

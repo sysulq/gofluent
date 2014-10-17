@@ -124,7 +124,7 @@ func (self *inputTail) start(ctx chan Context) error {
 
 		f.Close()
 
-		Log("offset:", offset, "raw_string:", line.Text)
+		//Log("offset:", offset, "raw_string:", line.Text)
 
 		record := Record{timeUnix, data}
 		ctx <- Context{self.tag, record}
