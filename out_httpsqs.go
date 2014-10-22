@@ -28,7 +28,6 @@ func (self *outputHttpsqs) new() interface{} {
 	return &outputHttpsqs{
 		host:           "localhost",
 		port:           1218,
-		auth:           "testauth",
 		flush_interval: 5,
 		gzip:           false,
 		client:         &http.Client{},

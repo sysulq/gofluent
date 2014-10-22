@@ -32,6 +32,7 @@ func ReadConf(filePath *string) interface{} {
 
 func init() {
 	c := flag.String("config", "config.json", "config filepath")
+	flag.Parse()
 
 	args := ReadConf(c).(map[string]interface{})
 

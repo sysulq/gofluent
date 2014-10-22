@@ -45,12 +45,14 @@ func NewInputs(ctx chan Context) {
 
 			err := in.(Input).configure(f)
 			if err != nil {
-				panic(err)
+				fmt.Println(err)
+				os.Exit(-1)
 			}
 
 			err = in.(Input).start(ctx)
 			if err != nil {
-				panic(err)
+				fmt.Println(err)
+				os.Exit(-1)
 			}
 		}(f)
 	}

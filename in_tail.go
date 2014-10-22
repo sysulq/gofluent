@@ -51,8 +51,24 @@ func (self *inputTail) configure(f map[string]interface{}) error {
 			Log(err)
 		}
 
+		f, err := os.Open(self.path)
+		if err != nil {
+			Log(err)
+			return err
+		}
+
+		info, err := f.Stat()
+		if err != nil {
+			Log(err)
+			return err
+		}
+
 		offset, _ := strconv.Atoi(string(str))
-		self.offset = int64(offset)
+		if int64(offset) > info.Size() {
+			self.offset = info.Size()
+		} else {
+			self.offset = int64(offset)
+		}
 	}
 
 	return nil
