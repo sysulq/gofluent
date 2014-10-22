@@ -83,7 +83,12 @@ func (self *inputTail) start(ctx chan Context) error {
 		seek = os.SEEK_END
 	}
 
-	t, err := tail.TailFile(self.path, tail.Config{Follow: true, Location: &tail.SeekInfo{int64(self.offset), seek}})
+	t, err := tail.TailFile(self.path, tail.Config{
+		Poll:      true,
+		ReOpen:    true,
+		Follow:    true,
+		MustExist: false,
+		Location:  &tail.SeekInfo{int64(self.offset), seek}})
 	if err != nil {
 		return err
 	}
