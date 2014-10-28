@@ -24,7 +24,7 @@ func (self *inputTail) new() interface{} {
 	return &inputTail{offset: 0}
 }
 
-func (self *inputTail) configure(f map[string]interface{}) error {
+func (self *inputTail) configure(f map[string]string) error {
 	var value interface{}
 
 	value = f["path"]

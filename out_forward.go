@@ -39,7 +39,7 @@ func (self *OutputForward) new() interface{} {
 	}
 }
 
-func (self *OutputForward) configure(f map[string]interface{}) error {
+func (self *OutputForward) configure(f map[string]string) error {
 	var value interface{}
 
 	value = f["host"]

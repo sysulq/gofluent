@@ -8,7 +8,7 @@ import (
 type Input interface {
 	new() interface{}
 	start(ctx chan Context) error
-	configure(f map[string]interface{}) error
+	configure(f map[string]string) error
 }
 
 var input_plugins = make(map[string]Input)
@@ -27,9 +27,9 @@ func RegisterInput(name string, input Input) {
 
 func NewInputs(ctx chan Context) {
 	for _, input_config := range config.Inputs_config {
-		f := input_config.(map[string]interface{})
-		go func(f map[string]interface{}) {
-			intput_type, ok := f["type"].(string)
+		f := input_config.(map[string]string)
+		go func(f map[string]string) {
+			intput_type, ok := f["type"]
 			if !ok {
 				fmt.Println("no type configured")
 				os.Exit(-1)

@@ -8,12 +8,13 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 type outputHttpsqs struct {
 	host string
-	port int32
+	port int
 
 	auth           string
 	flush_interval int
@@ -29,39 +30,41 @@ func (self *outputHttpsqs) new() interface{} {
 	return &outputHttpsqs{
 		host:           "localhost",
 		port:           1218,
-		flush_interval: 5,
-		gzip:           false,
+		flush_interval: 10,
+		gzip:           true,
 		client:         &http.Client{},
 		buffer:         make(map[string][]byte, 0),
 	}
 }
 
-func (self *outputHttpsqs) configure(f map[string]interface{}) error {
-	var value interface{}
+func (self *outputHttpsqs) configure(f map[string]string) error {
+	var value string
 
 	value = f["host"]
-	if value != nil {
-		self.host = value.(string)
+	if len(value) > 0 {
+		self.host = value
 	}
 
 	value = f["port"]
-	if value != nil {
-		self.port = int32(value.(float64))
+	if len(value) > 0 {
+		self.port, _ = strconv.Atoi(value)
 	}
 
 	value = f["auth"]
-	if value != nil {
-		self.auth = value.(string)
+	if len(value) > 0 {
+		self.auth = value
 	}
 
 	value = f["flush_interval"]
-	if value != nil {
-		self.flush_interval = int(value.(float64))
+	if len(value) > 0 {
+		self.flush_interval, _ = strconv.Atoi(value)
 	}
 
 	value = f["gzip"]
-	if value != nil {
-		self.gzip = value.(bool)
+	if len(value) > 0 {
+		if value == "off" {
+			self.gzip = false
+		}
 	}
 
 	return nil
@@ -126,7 +129,7 @@ func (self *outputHttpsqs) flush() {
 			continue
 		}
 
-		Log("resp:", resp.StatusCode)
+		Log("StatusCode:", resp.StatusCode, "Pos:", resp.Header.Get("Pos"))
 
 		io.Copy(ioutil.Discard, resp.Body)
 		resp.Body.Close()

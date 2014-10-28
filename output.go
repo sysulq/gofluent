@@ -9,7 +9,7 @@ import (
 type output interface {
 	new() interface{}
 	start(ctx chan Context) error
-	configure(f map[string]interface{}) error
+	configure(f map[string]string) error
 }
 
 var output_plugins = make(map[string]output)
@@ -29,11 +29,11 @@ func RegisterOutput(name string, out output) {
 func NewOutputs(ctx chan Context) error {
 	outChan := make([]chan Context, 0)
 	for _, output_config := range config.Outputs_config {
-		f := output_config.(map[string]interface{})
+		f := output_config.(map[string]string)
 		tmpch := make(chan Context)
 		outChan = append(outChan, tmpch)
-		go func(f map[string]interface{}, tmpch chan Context) {
-			output_type, ok := f["type"].(string)
+		go func(f map[string]string, tmpch chan Context) {
+			output_type, ok := f["type"]
 			if !ok {
 				fmt.Println("no type configured")
 				os.Exit(-1)
@@ -61,8 +61,8 @@ func NewOutputs(ctx chan Context) error {
 	for {
 		s := <-ctx
 		for i, o := range outChan {
-			f := config.Outputs_config[i].(map[string]interface{})
-			tag := f["tag"].(string)
+			f := config.Outputs_config[i].(map[string]string)
+			tag := f["tag"]
 
 			tagre := regexp.MustCompile(tag)
 

@@ -7,7 +7,7 @@ func (self *OutputStdout) new() interface{} {
 	return &OutputStdout{}
 }
 
-func (self *OutputStdout) configure(f map[string]interface{}) error {
+func (self *OutputStdout) configure(f map[string]string) error {
 	return nil
 }
 
