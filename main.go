@@ -31,6 +31,7 @@ func init() {
 		if v.Name == "source" {
 			config.Inputs_config = append(config.Inputs_config, v.Attrs)
 		} else if v.Name == "match" {
+			v.Attrs["tag"] = v.Args
 			config.Outputs_config = append(config.Outputs_config, v.Attrs)
 		}
 	}
