@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"log"
 	"os"
 )
 
@@ -16,7 +17,7 @@ var config Config
 func ReadConf(filePath *string) interface{} {
 	file, err := os.Open(*filePath)
 	if err != nil {
-		Log(err)
+		log.Fatal(err)
 	}
 
 	decoder := json.NewDecoder(file)
@@ -24,7 +25,7 @@ func ReadConf(filePath *string) interface{} {
 	var jsontype interface{}
 	err = decoder.Decode(&jsontype)
 	if err != nil {
-		Log("Decode error: ", err)
+		log.Fatal("Decode error: ", err)
 	}
 
 	return jsontype

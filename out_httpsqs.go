@@ -21,6 +21,7 @@ type outputHttpsqs struct {
 	gzip           bool
 	buffer         map[string][]byte
 	client         *http.Client
+	count          int
 }
 
 func (self *outputHttpsqs) new() interface{} {
@@ -91,6 +92,7 @@ func (self *outputHttpsqs) start(ctx chan Context) error {
 					self.buffer[s.tag] = append(self.buffer[s.tag], byte(','))
 				}
 
+				self.count++
 				self.buffer[s.tag] = append(self.buffer[s.tag], b...)
 			}
 		}
@@ -102,7 +104,7 @@ func (self *outputHttpsqs) flush() {
 		url := fmt.Sprintf("http://%s:%d/?name=%s&opt=put&auth=%s", self.host, self.port, k, self.auth)
 
 		v = append(v, byte(']'))
-		Log("url:", url, ", buf length:", len(v))
+		Log("url:", url, "count:", self.count, "buf length:", len(v))
 		var buf bytes.Buffer
 		var req *http.Request
 
@@ -124,12 +126,13 @@ func (self *outputHttpsqs) flush() {
 			continue
 		}
 
-		Log("resp:", *resp)
+		Log("resp:", resp.StatusCode)
 
 		io.Copy(ioutil.Discard, resp.Body)
 		resp.Body.Close()
 		self.buffer[k] = self.buffer[k][0:0]
 		delete(self.buffer, k)
+		self.count = 0
 	}
 }
 
