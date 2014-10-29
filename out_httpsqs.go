@@ -107,7 +107,6 @@ func (self *outputHttpsqs) flush() {
 		url := fmt.Sprintf("http://%s:%d/?name=%s&opt=put&auth=%s", self.host, self.port, k, self.auth)
 
 		v = append(v, byte(']'))
-		Log("url:", url, "count:", self.count, "buf length:", len(v))
 		var buf bytes.Buffer
 		var req *http.Request
 
@@ -122,6 +121,8 @@ func (self *outputHttpsqs) flush() {
 
 		req.Header.Add("Content-Encoding", "gzip")
 		req.Header.Add("Content-Type", "application/json")
+
+		Log("url:", url, "count:", self.count, "length:", len(v), "gziped:", buf.Len())
 
 		resp, err := self.client.Do(req)
 		if err != nil {
