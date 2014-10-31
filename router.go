@@ -14,7 +14,12 @@ func (self *Router) Init() {
 }
 
 func (self *Router) AddOutChan(matchtag string, outChan chan Context) error {
-	re, err := regexp.Compile(matchtag)
+	chunk, err := BuildRegexpFromGlobPattern(matchtag)
+	if err != nil {
+		return err
+	}
+
+	re, err := regexp.Compile(chunk)
 	if err != nil {
 		return err
 	}
