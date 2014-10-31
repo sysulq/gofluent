@@ -26,6 +26,8 @@ func RegisterInput(name string, input Input) {
 }
 
 func NewInputs(ctx chan Context) {
+	router.AddInChan(ctx)
+
 	for _, input_config := range config.Inputs_config {
 		f := input_config.(map[string]string)
 		go func(f map[string]string) {

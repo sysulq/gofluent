@@ -23,7 +23,7 @@ var config Configure
 var router Router
 
 func init() {
-	c := flag.String("c", "fluent.conf", "config filepath")
+	c := flag.String("c", "gofluent.conf", "config filepath")
 	flag.Parse()
 
 	configure, _ := ParseConfig(nil, *c)
@@ -47,8 +47,6 @@ func main() {
 
 	go NewInputs(ctxInput)
 	go NewOutputs(ctxOutput)
-
-	router.AddInChan(ctxInput)
 
 	select {}
 }
