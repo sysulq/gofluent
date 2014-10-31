@@ -20,6 +20,7 @@ type Configure struct {
 }
 
 var config Configure
+var router Router
 
 func init() {
 	c := flag.String("c", "fluent.conf", "config filepath")
@@ -35,6 +36,8 @@ func init() {
 			config.Outputs_config = append(config.Outputs_config, v.Attrs)
 		}
 	}
+
+	router.Init()
 }
 
 func main() {
@@ -45,8 +48,7 @@ func main() {
 	go NewInputs(ctxInput)
 	go NewOutputs(ctxOutput)
 
-	for {
-		ctx := <-ctxInput
-		ctxOutput <- ctx
-	}
+	router.AddInChan(ctxInput)
+
+	select {}
 }

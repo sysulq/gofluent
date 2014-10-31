@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"regexp"
 )
 
 type output interface {
@@ -32,6 +31,8 @@ func NewOutputs(ctx chan Context) error {
 		f := output_config.(map[string]string)
 		tmpch := make(chan Context)
 		outChan = append(outChan, tmpch)
+		tag := f["tag"]
+		router.AddOutChan(tag, tmpch)
 		go func(f map[string]string, tmpch chan Context) {
 			output_type, ok := f["type"]
 			if !ok {
@@ -58,30 +59,7 @@ func NewOutputs(ctx chan Context) error {
 		}(f, tmpch)
 	}
 
-	for {
-		s := <-ctx
-		for i, o := range outChan {
-			f := config.Outputs_config[i].(map[string]string)
-			tag := f["tag"]
-
-			chunk, err := BuildRegexpFromGlobPattern(tag)
-			if err != nil {
-				return err
-			}
-
-			re, err := regexp.Compile(chunk)
-			if err != nil {
-				return err
-			}
-
-			flag := re.MatchString(s.tag)
-			if flag == false {
-				continue
-			}
-
-			o <- s
-		}
-	}
+	router.Loop()
 
 	return nil
 }
