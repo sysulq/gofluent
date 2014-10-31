@@ -26,11 +26,9 @@ func RegisterOutput(name string, out output) {
 }
 
 func NewOutputs(ctx chan Context) error {
-	outChan := make([]chan Context, 0)
 	for _, output_config := range config.Outputs_config {
 		f := output_config.(map[string]string)
 		tmpch := make(chan Context)
-		outChan = append(outChan, tmpch)
 		tag := f["tag"]
 		router.AddOutChan(tag, tmpch)
 		go func(f map[string]string, tmpch chan Context) {
