@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -130,9 +129,9 @@ func (self *outputHttpsqs) flush() {
 			continue
 		}
 
-		Log("StatusCode:", resp.StatusCode, "Pos:", resp.Header.Get("Pos"))
+		v, _ := ioutil.ReadAll(resp.Body)
+		Log("StatusCode:", resp.StatusCode, string(v), "Pos:", resp.Header.Get("Pos"))
 
-		io.Copy(ioutil.Discard, resp.Body)
 		resp.Body.Close()
 		self.buffer[k] = self.buffer[k][0:0]
 		delete(self.buffer, k)
