@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/ActiveState/tail"
 	"io/ioutil"
 	"os"
@@ -93,8 +92,7 @@ func (self *inputTail) start(ctx chan Context) error {
 
 	var re regexp.Regexp
 	if string(self.format[0]) == string("/") || string(self.format[len(self.format)-1]) == string("/") {
-		fmt.Println(strings.Trim(self.format, "/"))
-		re = *regexp.MustCompile(self.format)
+		re = *regexp.MustCompile(strings.Trim(self.format, "/"))
 		self.format = "regexp"
 	} else if self.format == "json" {
 
@@ -126,7 +124,7 @@ func (self *inputTail) start(ctx chan Context) error {
 
 		offset, err := t.Tell()
 		if err != nil {
-			fmt.Println("Tell return error: ", err)
+			Log("Tell return error: ", err)
 		}
 
 		str := strconv.Itoa(int(offset))
@@ -142,8 +140,6 @@ func (self *inputTail) start(ctx chan Context) error {
 		}
 
 		f.Close()
-
-		//Log("offset:", offset, "raw_string:", line.Text)
 
 		record := Record{timeUnix, data}
 		ctx <- Context{self.tag, record}
