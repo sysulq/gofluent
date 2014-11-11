@@ -2,6 +2,9 @@ package main
 
 import (
 	"flag"
+	"log"
+	"os"
+	"runtime/pprof"
 )
 
 type Context struct {
@@ -24,7 +27,6 @@ var router Router
 
 func init() {
 	c := flag.String("c", "gofluent.conf", "config filepath")
-	flag.Parse()
 
 	configure, _ := ParseConfig(nil, *c)
 
@@ -41,6 +43,20 @@ func init() {
 }
 
 func main() {
+	p := flag.String("p", "", "write cpu profile to file")
+	flag.Parse()
+
+	if *p != "" {
+		f, err := os.Create(*p)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer func() {
+			pprof.StopCPUProfile()
+			f.Close()
+		}()
+	}
 
 	ctxInput := make(chan Context, 10)
 	ctxOutput := make(chan Context, 10)
