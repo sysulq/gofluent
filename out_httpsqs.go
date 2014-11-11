@@ -83,8 +83,10 @@ func (self *outputHttpsqs) start(ctx chan Context) error {
 			}
 		case s := <-ctx:
 			{
+				//Log("output record:", s.record, s.tag, self.count)
 				b, err := json.Marshal(s.record.data)
 				if err != nil {
+					Log("json.Marshal:", err)
 					continue
 				}
 
