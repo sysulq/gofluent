@@ -24,22 +24,18 @@ type OutputForward struct {
 	buffer bytes.Buffer
 }
 
-func (self *OutputForward) new() interface{} {
+func (self *OutputForward) Configure(f map[string]string) error {
 	_codec := codec.MsgpackHandle{}
 	_codec.MapType = reflect.TypeOf(map[string]interface{}(nil))
 	_codec.RawToString = false
 	_codec.StructToArray = true
 
-	return &OutputForward{
-		host:            "localhost",
-		port:            8888,
-		flush_interval:  5,
-		connect_timeout: 10,
-		codec:           &_codec,
-	}
-}
+	self.host = "localhost"
+	self.port = 8888
+	self.flush_interval = 10
+	self.connect_timeout = 10
+	self.codec = &_codec
 
-func (self *OutputForward) configure(f map[string]string) error {
 	var value interface{}
 
 	value = f["host"]
@@ -65,7 +61,7 @@ func (self *OutputForward) configure(f map[string]string) error {
 	return nil
 }
 
-func (self *OutputForward) start(ctx chan Context) error {
+func (self *OutputForward) Run(ctx chan Context) error {
 
 	tick := time.NewTicker(time.Second * time.Duration(self.flush_interval))
 
@@ -128,5 +124,7 @@ func (self *OutputForward) encodeRecordSet(ctx Context) error {
 }
 
 func init() {
-	RegisterOutput("forward", &OutputForward{})
+	RegisterOutput("forward", func() interface{} {
+		return new(OutputForward)
+	})
 }

@@ -24,19 +24,14 @@ type outputHttpsqs struct {
 	count          int
 }
 
-func (self *outputHttpsqs) new() interface{} {
+func (self *outputHttpsqs) Init(f map[string]string) error {
+	self.host = "localhost"
+	self.port = 1218
+	self.flush_interval = 10
+	self.gzip = true
+	self.client = &http.Client{}
+	self.buffer = make(map[string][]byte, 0)
 
-	return &outputHttpsqs{
-		host:           "localhost",
-		port:           1218,
-		flush_interval: 10,
-		gzip:           true,
-		client:         &http.Client{},
-		buffer:         make(map[string][]byte, 0),
-	}
-}
-
-func (self *outputHttpsqs) configure(f map[string]string) error {
 	var value string
 
 	value = f["host"]
@@ -69,7 +64,7 @@ func (self *outputHttpsqs) configure(f map[string]string) error {
 	return nil
 }
 
-func (self *outputHttpsqs) start(ctx chan Context) error {
+func (self *outputHttpsqs) Run(ctx chan Context) error {
 
 	tick := time.NewTicker(time.Second * time.Duration(self.flush_interval))
 
@@ -142,5 +137,7 @@ func (self *outputHttpsqs) flush() {
 }
 
 func init() {
-	RegisterOutput("httpsqs", &outputHttpsqs{})
+	RegisterOutput("httpsqs", func() interface{} {
+		return new(outputHttpsqs)
+	})
 }

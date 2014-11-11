@@ -19,11 +19,7 @@ type inputTail struct {
 	offset int64
 }
 
-func (self *inputTail) new() interface{} {
-	return &inputTail{offset: 0}
-}
-
-func (self *inputTail) configure(f map[string]string) error {
+func (self *inputTail) Init(f map[string]string) error {
 	var value interface{}
 
 	value = f["path"]
@@ -71,7 +67,7 @@ func (self *inputTail) configure(f map[string]string) error {
 	return nil
 }
 
-func (self *inputTail) start(ctx chan Context) error {
+func (self *inputTail) Run(ctx chan Context) error {
 
 	var seek int
 	if self.offset > 0 {
@@ -152,5 +148,7 @@ func (self *inputTail) start(ctx chan Context) error {
 }
 
 func init() {
-	RegisterInput("tail", &inputTail{})
+	RegisterInput("tail", func() interface{} {
+		return new(inputTail)
+	})
 }

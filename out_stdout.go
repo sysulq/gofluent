@@ -3,15 +3,11 @@ package main
 type OutputStdout struct {
 }
 
-func (self *OutputStdout) new() interface{} {
-	return &OutputStdout{}
-}
-
-func (self *OutputStdout) configure(f map[string]string) error {
+func (self *OutputStdout) Init(f map[string]string) error {
 	return nil
 }
 
-func (self *OutputStdout) start(ctx chan Context) error {
+func (self *OutputStdout) Run(ctx chan Context) error {
 	go func(ctx chan Context) {
 		for {
 			ch := <-ctx
@@ -23,5 +19,7 @@ func (self *OutputStdout) start(ctx chan Context) error {
 }
 
 func init() {
-	RegisterOutput("stdout", &OutputStdout{})
+	RegisterOutput("stdout", func() interface{} {
+		return new(OutputStdout)
+	})
 }

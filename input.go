@@ -2,15 +2,9 @@ package main
 
 import ()
 
-type Input interface {
-	new() interface{}
-	start(ctx chan Context) error
-	configure(f map[string]string) error
-}
+var input_plugins = make(map[string]func() interface{})
 
-var input_plugins = make(map[string]Input)
-
-func RegisterInput(name string, input Input) {
+func RegisterInput(name string, input func() interface{}) {
 	if input == nil {
 		panic("input: Register input is nil")
 	}

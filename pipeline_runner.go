@@ -56,15 +56,15 @@ func Run(config *PipelineConfig) {
 				os.Exit(-1)
 			}
 
-			in := input.new()
+			in := input()
 
-			err := in.(Input).configure(f)
+			err := in.(Input).Init(f)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(-1)
 			}
 
-			err = in.(Input).start(ctxInput)
+			err = in.(Input).Run(ctxInput)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(-1)
@@ -90,13 +90,14 @@ func Run(config *PipelineConfig) {
 				os.Exit(-1)
 			}
 
-			out := output_plugin.new()
-			err := out.(output).configure(f)
+			out := output_plugin()
+
+			err := out.(Output).Init(f)
 			if err != nil {
 				Log(err)
 			}
 
-			err = out.(output).start(tmpch)
+			err = out.(Output).Run(tmpch)
 			if err != nil {
 				Log(err)
 			}

@@ -2,15 +2,9 @@ package main
 
 import ()
 
-type output interface {
-	new() interface{}
-	start(ctx chan Context) error
-	configure(f map[string]string) error
-}
+var output_plugins = make(map[string]func() interface{})
 
-var output_plugins = make(map[string]output)
-
-func RegisterOutput(name string, out output) {
+func RegisterOutput(name string, out func() interface{}) {
 	if out == nil {
 		Log("output: Register output is nil")
 	}

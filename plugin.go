@@ -1,7 +1,7 @@
 package main
 
 type PluginHelper interface {
-	Output(name string) (out output, ok bool)
+	Output(name string) (out Output, ok bool)
 	Intput(name string) (in Input, ok bool)
 }
 
