@@ -47,7 +47,7 @@ func (this *PipelinePack) Recycle() {
 }
 
 type PipelineConfig struct {
-	gc                *GlobalConfig
+	Gc                *GlobalConfig
 	InputRunners      []interface{}
 	OutputRunners     []interface{}
 	router            Router
@@ -58,7 +58,7 @@ type PipelineConfig struct {
 func NewPipeLineConfig(gc *GlobalConfig) *PipelineConfig {
 	config := new(PipelineConfig)
 	config.router.Init()
-	config.gc = gc
+	config.Gc = gc
 	config.inputRecycleChan = make(chan *PipelinePack, gc.PoolSize)
 	config.outputRecycleChan = make(chan *PipelinePack, gc.PoolSize)
 
@@ -90,12 +90,12 @@ func (this *PipelineConfig) OutputRecycleChan() chan *PipelinePack {
 func Run(config *PipelineConfig) {
 	log.Println("Starting gofluent...")
 
-	for i := 0; i < config.gc.PoolSize; i++ {
+	for i := 0; i < config.Gc.PoolSize; i++ {
 		iPack := NewPipelinePack(config.InputRecycleChan())
 		config.InputRecycleChan() <- iPack
 	}
 
-	rChan := make(chan *PipelinePack, 50)
+	rChan := make(chan *PipelinePack, config.Gc.PoolSize)
 	iRunner := NewInputRunner(config.InputRecycleChan(), rChan)
 
 	config.router.AddInChan(iRunner.RouterChan())
@@ -134,8 +134,8 @@ func Run(config *PipelineConfig) {
 
 	for _, output_config := range config.OutputRunners {
 		f := output_config.(map[string]string)
-		inChan := make(chan *PipelinePack, config.gc.PoolSize)
-		for i := 0; i < config.gc.PoolSize; i++ {
+		inChan := make(chan *PipelinePack, config.Gc.PoolSize)
+		for i := 0; i < config.Gc.PoolSize; i++ {
 			oPack := NewPipelinePack(inChan)
 			config.OutputRecycleChan() <- oPack
 		}
