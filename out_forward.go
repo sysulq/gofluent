@@ -113,7 +113,7 @@ func (self *OutputForward) flush() error {
 }
 
 func (self *OutputForward) encodeRecordSet(ctx Context) error {
-	v := []interface{}{ctx.tag, ctx.record}
+	v := []interface{}{ctx.tag, ctx.timestamp, ctx.data}
 	if self.enc == nil {
 		self.enc = codec.NewEncoder(&self.buffer, self.codec)
 	}

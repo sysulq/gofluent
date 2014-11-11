@@ -8,11 +8,7 @@ import (
 )
 
 type Context struct {
-	tag    string
-	record Record
-}
-
-type Record struct {
+	tag       string
 	timestamp int64
 	data      map[string]string
 }
@@ -26,8 +22,11 @@ type PipelinePack struct {
 
 func NewPipelinePack(recycleChan chan *PipelinePack) (pack *PipelinePack) {
 	msgBytes := make([]byte, 100)
+	data := make(map[string]string)
+	ctx := Context{data: data}
 	return &PipelinePack{
 		MsgBytes:    msgBytes,
+		Ctx:         ctx,
 		RecycleChan: recycleChan,
 		RefCount:    int32(1),
 	}

@@ -101,9 +101,11 @@ func (self *inputTail) Run(runner InputRunner) error {
 	defer f.Close()
 
 	for line := range t.Lines {
+		pack := <-runner.InChan()
 
-		timeUnix := line.Time.Unix()
-		data := make(map[string]string)
+		pack.MsgBytes = []byte(line.Text)
+		pack.Ctx.tag = self.tag
+		pack.Ctx.timestamp = line.Time.Unix()
 
 		if self.format == "regexp" {
 			text := re.FindSubmatch([]byte(line.Text))
@@ -113,11 +115,11 @@ func (self *inputTail) Run(runner InputRunner) error {
 
 			for i, name := range re.SubexpNames() {
 				if i != 0 {
-					data[name] = string(text[i])
+					pack.Ctx.data[name] = string(text[i])
 				}
 			}
 		} else if self.format == "json" {
-			err := json.Unmarshal([]byte(line.Text), &data)
+			err := json.Unmarshal([]byte(line.Text), &pack.Ctx.data)
 			if err != nil {
 				continue
 			}
@@ -135,10 +137,6 @@ func (self *inputTail) Run(runner InputRunner) error {
 			Log(err)
 		}
 
-		record := Record{timeUnix, data}
-		pack := <-runner.InChan()
-		pack.MsgBytes = []byte(line.Text)
-		pack.Ctx = Context{self.tag, record}
 		runner.RouterChan() <- pack
 	}
 

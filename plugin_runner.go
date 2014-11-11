@@ -1,5 +1,7 @@
 package main
 
+import ()
+
 type InputRunner interface {
 	InChan() chan *PipelinePack
 	RouterChan() chan *PipelinePack

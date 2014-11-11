@@ -78,11 +78,10 @@ func (self *outputHttpsqs) Run(runner OutputRunner) error {
 			}
 		case pack := <-runner.InChan():
 			{
-				//Log("output record:", s.record, s.tag, self.count)
 				s := pack.Ctx
 				pack.Recycle()
 
-				b, err := json.Marshal(s.record.data)
+				b, err := json.Marshal(s.data)
 				if err != nil {
 					Log("json.Marshal:", err)
 					continue
