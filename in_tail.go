@@ -98,6 +98,12 @@ func (self *inputTail) start(ctx chan Context) error {
 
 	}
 
+	f, err := os.OpenFile(self.pos_file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+	if err != nil {
+		Log(err)
+	}
+	defer f.Close()
+
 	for line := range t.Lines {
 
 		timeUnix := line.Time.Unix()
@@ -111,7 +117,6 @@ func (self *inputTail) start(ctx chan Context) error {
 
 			for i, name := range re.SubexpNames() {
 				if i != 0 {
-					Log(name, string(text[i]))
 					data[name] = string(text[i])
 				}
 			}
@@ -129,17 +134,10 @@ func (self *inputTail) start(ctx chan Context) error {
 
 		str := strconv.Itoa(int(offset))
 
-		f, err := os.OpenFile(self.pos_file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
-		if err != nil {
-			Log(err)
-		}
-
 		_, err = f.WriteString(str)
 		if err != nil {
 			Log(err)
 		}
-
-		f.Close()
 
 		record := Record{timeUnix, data}
 		ctx <- Context{self.tag, record}
