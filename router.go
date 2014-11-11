@@ -5,15 +5,15 @@ import (
 )
 
 type Router struct {
-	inChan  chan Context
-	outChan map[*regexp.Regexp]chan Context
+	inChan  chan *PipelinePack
+	outChan map[*regexp.Regexp]chan *PipelinePack
 }
 
 func (self *Router) Init() {
-	self.outChan = make(map[*regexp.Regexp]chan Context)
+	self.outChan = make(map[*regexp.Regexp]chan *PipelinePack)
 }
 
-func (self *Router) AddOutChan(matchtag string, outChan chan Context) error {
+func (self *Router) AddOutChan(matchtag string, outChan chan *PipelinePack) error {
 	chunk, err := BuildRegexpFromGlobPattern(matchtag)
 	if err != nil {
 		return err
@@ -28,17 +28,17 @@ func (self *Router) AddOutChan(matchtag string, outChan chan Context) error {
 	return nil
 }
 
-func (self *Router) AddInChan(inChan chan Context) {
+func (self *Router) AddInChan(inChan chan *PipelinePack) {
 	self.inChan = inChan
 }
 
 func (self *Router) Loop() {
 	for {
-		ctx := <-self.inChan
+		pack := <-self.inChan
 		for k, v := range self.outChan {
-			flag := k.MatchString(ctx.tag)
+			flag := k.MatchString(pack.Ctx.tag)
 			if flag == true {
-				v <- ctx
+				v <- pack
 			}
 		}
 	}

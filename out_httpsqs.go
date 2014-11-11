@@ -64,7 +64,7 @@ func (self *outputHttpsqs) Init(f map[string]string) error {
 	return nil
 }
 
-func (self *outputHttpsqs) Run(ctx chan Context) error {
+func (self *outputHttpsqs) Run(runner OutputRunner) error {
 
 	tick := time.NewTicker(time.Second * time.Duration(self.flush_interval))
 
@@ -76,9 +76,12 @@ func (self *outputHttpsqs) Run(ctx chan Context) error {
 					self.flush()
 				}
 			}
-		case s := <-ctx:
+		case pack := <-runner.InChan():
 			{
 				//Log("output record:", s.record, s.tag, self.count)
+				s := pack.Ctx
+				pack.Recycle()
+
 				b, err := json.Marshal(s.record.data)
 				if err != nil {
 					Log("json.Marshal:", err)

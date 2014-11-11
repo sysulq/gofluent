@@ -7,13 +7,11 @@ func (self *OutputStdout) Init(f map[string]string) error {
 	return nil
 }
 
-func (self *OutputStdout) Run(ctx chan Context) error {
-	go func(ctx chan Context) {
-		for {
-			ch := <-ctx
-			Log(ch.record)
-		}
-	}(ctx)
+func (self *OutputStdout) Run(runner OutputRunner) error {
+
+	pack := <-runner.InChan()
+	Log(pack.Ctx)
+	pack.Recycle()
 
 	return nil
 }

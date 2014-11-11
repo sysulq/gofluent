@@ -7,6 +7,16 @@ import (
 	"sync/atomic"
 )
 
+type Context struct {
+	tag    string
+	record Record
+}
+
+type Record struct {
+	timestamp int64
+	data      map[string]string
+}
+
 type PipelinePack struct {
 	MsgBytes    []byte
 	Ctx         Context
@@ -36,13 +46,63 @@ func (this *PipelinePack) Recycle() {
 	}
 }
 
+type PipelineConfig struct {
+	gc                *GlobalConfig
+	InputRunners      []interface{}
+	OutputRunners     []interface{}
+	router            Router
+	inputRecycleChan  chan *PipelinePack
+	outputRecycleChan chan *PipelinePack
+}
+
+func NewPipeLineConfig(gc *GlobalConfig) *PipelineConfig {
+	config := new(PipelineConfig)
+	config.router.Init()
+	config.gc = gc
+	config.inputRecycleChan = make(chan *PipelinePack, gc.PoolSize)
+	config.outputRecycleChan = make(chan *PipelinePack, gc.PoolSize)
+
+	return config
+}
+
+func (this *PipelineConfig) LoadConfig(path string) error {
+	configure, _ := ParseConfig(nil, path)
+	for _, v := range configure.Root.Elems {
+		if v.Name == "source" {
+			this.InputRunners = append(this.InputRunners, v.Attrs)
+		} else if v.Name == "match" {
+			v.Attrs["tag"] = v.Args
+			this.OutputRunners = append(this.OutputRunners, v.Attrs)
+		}
+	}
+
+	return nil
+}
+
+func (this *PipelineConfig) InputRecycleChan() chan *PipelinePack {
+	return this.inputRecycleChan
+}
+
+func (this *PipelineConfig) OutputRecycleChan() chan *PipelinePack {
+	return this.outputRecycleChan
+}
+
 func Run(config *PipelineConfig) {
 	log.Println("Starting gofluent...")
-	ctxInput := make(chan Context, 10)
-	config.router.AddInChan(ctxInput)
+
+	for i := 0; i < config.gc.PoolSize; i++ {
+		iPack := NewPipelinePack(config.InputRecycleChan())
+		config.InputRecycleChan() <- iPack
+	}
+
+	rChan := make(chan *PipelinePack, 50)
+	iRunner := NewInputRunner(config.InputRecycleChan(), rChan)
+
+	config.router.AddInChan(iRunner.RouterChan())
 
 	for _, input_config := range config.InputRunners {
 		f := input_config.(map[string]string)
+
 		go func(f map[string]string) {
 			intput_type, ok := f["type"]
 			if !ok {
@@ -64,7 +124,7 @@ func Run(config *PipelineConfig) {
 				os.Exit(-1)
 			}
 
-			err = in.(Input).Run(ctxInput)
+			err = in.(Input).Run(iRunner)
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(-1)
@@ -74,10 +134,15 @@ func Run(config *PipelineConfig) {
 
 	for _, output_config := range config.OutputRunners {
 		f := output_config.(map[string]string)
-		tmpch := make(chan Context)
-		tag := f["tag"]
-		config.router.AddOutChan(tag, tmpch)
-		go func(f map[string]string, tmpch chan Context) {
+		inChan := make(chan *PipelinePack, config.gc.PoolSize)
+		for i := 0; i < config.gc.PoolSize; i++ {
+			oPack := NewPipelinePack(inChan)
+			config.OutputRecycleChan() <- oPack
+		}
+		oRunner := NewOutputRunner(inChan)
+		config.router.AddOutChan(f["tag"], oRunner.InChan())
+
+		go func(f map[string]string, oRunner OutputRunner) {
 			output_type, ok := f["type"]
 			if !ok {
 				fmt.Println("no type configured")
@@ -97,11 +162,11 @@ func Run(config *PipelineConfig) {
 				Log(err)
 			}
 
-			err = out.(Output).Run(tmpch)
+			err = out.(Output).Run(oRunner)
 			if err != nil {
 				Log(err)
 			}
-		}(f, tmpch)
+		}(f, oRunner)
 	}
 
 	config.router.Loop()

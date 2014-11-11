@@ -1,11 +1,11 @@
 package main
 
-type Output interface {
-	Init(map[string]string) error
-	Run(ctx chan Context) error
+type Input interface {
+	Init(config map[string]string) error
+	Run(in InputRunner) error
 }
 
-type Input interface {
-	Init(map[string]string) error
-	Run(ctx chan Context) error
+type Output interface {
+	Init(config map[string]string) error
+	Run(out OutputRunner) error
 }

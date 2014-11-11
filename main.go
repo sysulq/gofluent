@@ -7,14 +7,8 @@ import (
 	"runtime/pprof"
 )
 
-type Context struct {
-	tag    string
-	record Record
-}
-
-type Record struct {
-	timestamp int64
-	data      map[string]string
+type GlobalConfig struct {
+	PoolSize int
 }
 
 func main() {
@@ -34,7 +28,8 @@ func main() {
 		}()
 	}
 
-	config := NewPipeLineConfig()
+	gc := DefaultGC()
+	config := NewPipeLineConfig(gc)
 	config.LoadConfig(*c)
 
 	Run(config)

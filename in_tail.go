@@ -67,7 +67,7 @@ func (self *inputTail) Init(f map[string]string) error {
 	return nil
 }
 
-func (self *inputTail) Run(ctx chan Context) error {
+func (self *inputTail) Run(runner InputRunner) error {
 
 	var seek int
 	if self.offset > 0 {
@@ -136,7 +136,10 @@ func (self *inputTail) Run(ctx chan Context) error {
 		}
 
 		record := Record{timeUnix, data}
-		ctx <- Context{self.tag, record}
+		pack := <-runner.InChan()
+		pack.MsgBytes = []byte(line.Text)
+		pack.Ctx = Context{self.tag, record}
+		runner.RouterChan() <- pack
 	}
 
 	err = t.Wait()

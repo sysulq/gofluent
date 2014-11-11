@@ -24,7 +24,7 @@ type OutputForward struct {
 	buffer bytes.Buffer
 }
 
-func (self *OutputForward) Configure(f map[string]string) error {
+func (self *OutputForward) Init(f map[string]string) error {
 	_codec := codec.MsgpackHandle{}
 	_codec.MapType = reflect.TypeOf(map[string]interface{}(nil))
 	_codec.RawToString = false
@@ -61,7 +61,7 @@ func (self *OutputForward) Configure(f map[string]string) error {
 	return nil
 }
 
-func (self *OutputForward) Run(ctx chan Context) error {
+func (self *OutputForward) Run(runner OutputRunner) error {
 
 	tick := time.NewTicker(time.Second * time.Duration(self.flush_interval))
 
@@ -74,9 +74,10 @@ func (self *OutputForward) Run(ctx chan Context) error {
 					self.flush()
 				}
 			}
-		case s := <-ctx:
+		case pack := <-runner.InChan():
 			{
-				self.encodeRecordSet(s)
+				self.encodeRecordSet(pack.Ctx)
+				pack.Recycle()
 			}
 		}
 	}
