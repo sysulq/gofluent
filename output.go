@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-	"os"
-)
+import ()
 
 type output interface {
 	new() interface{}
@@ -23,41 +20,4 @@ func RegisterOutput(name string, out output) {
 	}
 
 	output_plugins[name] = out
-}
-
-func NewOutputs(ctx chan Context) error {
-	for _, output_config := range config.Outputs_config {
-		f := output_config.(map[string]string)
-		tmpch := make(chan Context)
-		tag := f["tag"]
-		router.AddOutChan(tag, tmpch)
-		go func(f map[string]string, tmpch chan Context) {
-			output_type, ok := f["type"]
-			if !ok {
-				fmt.Println("no type configured")
-				os.Exit(-1)
-			}
-
-			output_plugin, ok := output_plugins[output_type]
-			if !ok {
-				Log("unkown type ", output_type)
-				os.Exit(-1)
-			}
-
-			out := output_plugin.new()
-			err := out.(output).configure(f)
-			if err != nil {
-				Log(err)
-			}
-
-			err = out.(output).start(tmpch)
-			if err != nil {
-				Log(err)
-			}
-		}(f, tmpch)
-	}
-
-	router.Loop()
-
-	return nil
 }

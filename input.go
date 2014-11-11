@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-	"os"
-)
+import ()
 
 type Input interface {
 	new() interface{}
@@ -23,41 +20,4 @@ func RegisterInput(name string, input Input) {
 	}
 
 	input_plugins[name] = input
-}
-
-func NewInputs(ctx chan Context) {
-	router.AddInChan(ctx)
-
-	for _, input_config := range config.Inputs_config {
-		f := input_config.(map[string]string)
-		go func(f map[string]string) {
-			intput_type, ok := f["type"]
-			if !ok {
-				fmt.Println("no type configured")
-				os.Exit(-1)
-			}
-
-			input, ok := input_plugins[intput_type]
-			if !ok {
-				fmt.Println("unkown type ", intput_type)
-				os.Exit(-1)
-			}
-
-			in := input.new()
-
-			err := in.(Input).configure(f)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(-1)
-			}
-
-			err = in.(Input).start(ctx)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(-1)
-			}
-		}(f)
-	}
-
-	return
 }
