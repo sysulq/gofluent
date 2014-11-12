@@ -92,12 +92,6 @@ func (self *inputTail) Run(runner InputRunner) error {
 
 	}
 
-	f, err := os.OpenFile(self.pos_file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
-	if err != nil {
-		Log(err)
-	}
-	defer f.Close()
-
 	for line := range t.Lines {
 		pack := <-runner.InChan()
 
@@ -130,10 +124,16 @@ func (self *inputTail) Run(runner InputRunner) error {
 
 		str := strconv.Itoa(int(offset))
 
+		f, err := os.OpenFile(self.pos_file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+		if err != nil {
+			Log(err)
+		}
+
 		_, err = f.WriteString(str)
 		if err != nil {
 			Log(err)
 		}
+		f.Close()
 
 		runner.RouterChan() <- pack
 	}
