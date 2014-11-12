@@ -41,17 +41,18 @@ func (self *inputTail) Init(f map[string]string) error {
 
 		str, err := ioutil.ReadFile(self.pos_file)
 		if err != nil {
-			Log(err)
+			Log("ioutil.ReadFile:", err)
 		}
 
 		f, err := os.Open(self.path)
 		if err != nil {
-			Log(err)
+			Log("os.Open:", err)
 		}
 
 		info, err := f.Stat()
 		if err != nil {
-			Log(err)
+			Log("f.Stat:", err)
+			self.offset = 0
 		} else {
 			offset, _ := strconv.Atoi(string(str))
 			if int64(offset) > info.Size() {
