@@ -74,7 +74,7 @@ func (self *OutputForward) Run(runner OutputRunner) error {
 			}
 		case pack := <-runner.InChan():
 			{
-				self.encodeRecordSet(pack.Ctx)
+				self.encodeRecordSet(pack.Msg)
 				pack.Recycle()
 			}
 		}
@@ -110,8 +110,8 @@ func (self *OutputForward) flush() error {
 
 }
 
-func (self *OutputForward) encodeRecordSet(ctx Context) error {
-	v := []interface{}{ctx.tag, ctx.timestamp, ctx.data}
+func (self *OutputForward) encodeRecordSet(msg Message) error {
+	v := []interface{}{msg.Tag, msg.Timestamp, msg.Data}
 	if self.enc == nil {
 		self.enc = codec.NewEncoder(&self.buffer, self.codec)
 	}

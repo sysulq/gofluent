@@ -36,7 +36,7 @@ func (self *Router) Loop() {
 	for {
 		pack := <-self.inChan
 		for k, v := range self.outChan {
-			flag := k.MatchString(pack.Ctx.tag)
+			flag := k.MatchString(pack.Msg.Tag)
 			if flag == true {
 				v <- pack
 			}

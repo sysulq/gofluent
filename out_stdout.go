@@ -10,7 +10,7 @@ func (self *OutputStdout) Init(f map[string]string) error {
 func (self *OutputStdout) Run(runner OutputRunner) error {
 
 	pack := <-runner.InChan()
-	Log(pack.Ctx)
+	Log(pack.Msg)
 	pack.Recycle()
 
 	return nil

@@ -7,15 +7,15 @@ import (
 	"sync/atomic"
 )
 
-type Context struct {
-	tag       string
-	timestamp int64
-	data      map[string]string
+type Message struct {
+	Tag       string
+	Timestamp int64
+	Data      map[string]string
 }
 
 type PipelinePack struct {
 	MsgBytes    []byte
-	Ctx         Context
+	Msg         Message
 	RecycleChan chan *PipelinePack
 	RefCount    int32
 }
@@ -23,10 +23,10 @@ type PipelinePack struct {
 func NewPipelinePack(recycleChan chan *PipelinePack) (pack *PipelinePack) {
 	msgBytes := make([]byte, 100)
 	data := make(map[string]string)
-	ctx := Context{data: data}
+	msg := Message{Data: data}
 	return &PipelinePack{
 		MsgBytes:    msgBytes,
-		Ctx:         ctx,
+		Msg:         msg,
 		RecycleChan: recycleChan,
 		RefCount:    int32(1),
 	}

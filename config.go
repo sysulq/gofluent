@@ -247,9 +247,3 @@ func ParseConfig(opener Opener, filename string) (*Config, error) {
 	}
 	return &Config{Root: makeConfigElementFromContext(context)}, nil
 }
-
-func DefaultGC() *GlobalConfig {
-	gc := new(GlobalConfig)
-	gc.PoolSize = 100
-	return gc
-}

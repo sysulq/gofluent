@@ -78,23 +78,24 @@ func (self *outputHttpsqs) Run(runner OutputRunner) error {
 			}
 		case pack := <-runner.InChan():
 			{
-				s := pack.Ctx
-				pack.Recycle()
 
-				b, err := json.Marshal(s.data)
+				b, err := json.Marshal(pack.Msg.Data)
+
 				if err != nil {
 					Log("json.Marshal:", err)
+					pack.Recycle()
 					continue
 				}
 
 				if len(self.buffer) == 0 {
-					self.buffer[s.tag] = append(self.buffer[s.tag], byte('['))
+					self.buffer[pack.Msg.Tag] = append(self.buffer[pack.Msg.Tag], byte('['))
 				} else if len(self.buffer) > 0 {
-					self.buffer[s.tag] = append(self.buffer[s.tag], byte(','))
+					self.buffer[pack.Msg.Tag] = append(self.buffer[pack.Msg.Tag], byte(','))
 				}
 
 				self.count++
-				self.buffer[s.tag] = append(self.buffer[s.tag], b...)
+				self.buffer[pack.Msg.Tag] = append(self.buffer[pack.Msg.Tag], b...)
+				pack.Recycle()
 			}
 		}
 	}
