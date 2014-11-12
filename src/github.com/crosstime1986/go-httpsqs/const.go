@@ -1,0 +1,11 @@
+package httpsqs
+
+var STATUS_SUCCESS = 1
+var STATUS_FAILED = 0
+var GLOBAL_HTTPSQS_PSOCKET = 256
+var GLOBAL_HTTPSQS_TIMEOUT = 3
+
+
+
+
+
