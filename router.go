@@ -2,6 +2,7 @@ package main
 
 import (
 	"regexp"
+	"sync/atomic"
 )
 
 type Router struct {
@@ -35,11 +36,15 @@ func (self *Router) AddInChan(inChan chan *PipelinePack) {
 func (self *Router) Loop() {
 	for {
 		pack := <-self.inChan
-		for k, v := range self.outChan {
-			flag := k.MatchString(pack.Msg.Tag)
+
+		for re, outChan := range self.outChan {
+			flag := re.MatchString(pack.Msg.Tag)
 			if flag == true {
-				v <- pack
+				atomic.AddInt32(&pack.RefCount, 1)
+				outChan <- pack
 			}
 		}
+
+		pack.Recycle()
 	}
 }

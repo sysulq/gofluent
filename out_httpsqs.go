@@ -78,7 +78,6 @@ func (self *outputHttpsqs) Run(runner OutputRunner) error {
 			}
 		case pack := <-runner.InChan():
 			{
-
 				b, err := json.Marshal(pack.Msg.Data)
 
 				if err != nil {

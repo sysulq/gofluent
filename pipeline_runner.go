@@ -28,7 +28,7 @@ func NewPipelinePack(recycleChan chan *PipelinePack) (pack *PipelinePack) {
 		MsgBytes:    msgBytes,
 		Msg:         msg,
 		RecycleChan: recycleChan,
-		RefCount:    int32(1),
+		RefCount:    1,
 	}
 }
 
