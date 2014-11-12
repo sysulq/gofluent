@@ -24,7 +24,7 @@ type OutputForward struct {
 	buffer bytes.Buffer
 }
 
-func (self *OutputForward) Init(f map[string]string) error {
+func (self *OutputForward) Init(config map[string]string) error {
 	_codec := codec.MsgpackHandle{}
 	_codec.MapType = reflect.TypeOf(map[string]interface{}(nil))
 	_codec.RawToString = false
@@ -36,26 +36,24 @@ func (self *OutputForward) Init(f map[string]string) error {
 	self.connect_timeout = 10
 	self.codec = &_codec
 
-	var value interface{}
-
-	value = f["host"]
-	if value != nil {
-		self.host = value.(string)
+	value := config["host"]
+	if len(value) > 0 {
+		self.host = value
 	}
 
-	value = f["port"]
-	if value != nil {
-		self.port = int(value.(float64))
+	value = config["port"]
+	if len(value) > 0 {
+		self.port, _ = strconv.Atoi(value)
 	}
 
-	value = f["connect_timeout"]
-	if value != nil {
-		self.connect_timeout = int(value.(float64))
+	value = config["connect_timeout"]
+	if len(value) > 0 {
+		self.connect_timeout, _ = strconv.Atoi(value)
 	}
 
-	value = f["flush_interval"]
-	if value != nil {
-		self.flush_interval = int(value.(float64))
+	value = config["flush_interval"]
+	if len(value) > 0 {
+		self.flush_interval, _ = strconv.Atoi(value)
 	}
 
 	return nil

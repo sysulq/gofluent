@@ -20,26 +20,24 @@ type inputTail struct {
 }
 
 func (self *inputTail) Init(f map[string]string) error {
-	var value interface{}
-
-	value = f["path"]
-	if value != nil {
-		self.path = value.(string)
+	value := f["path"]
+	if len(value) > 0 {
+		self.path = value
 	}
 
 	value = f["format"]
-	if value != nil {
-		self.format = value.(string)
+	if len(value) > 0 {
+		self.format = value
 	}
 
 	value = f["tag"]
-	if value != nil {
-		self.tag = value.(string)
+	if len(value) > 0 {
+		self.tag = value
 	}
 
 	value = f["pos_file"]
-	if value != nil {
-		self.pos_file = value.(string)
+	if len(value) > 0 {
+		self.pos_file = value
 
 		str, err := ioutil.ReadFile(self.pos_file)
 		if err != nil {
