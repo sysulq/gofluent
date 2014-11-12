@@ -134,10 +134,6 @@ func Run(config *PipelineConfig) {
 	for _, output_config := range config.OutputRunners {
 		f := output_config.(map[string]string)
 		inChan := make(chan *PipelinePack, config.Gc.PoolSize)
-		for i := 0; i < config.Gc.PoolSize; i++ {
-			oPack := NewPipelinePack(inChan)
-			config.OutputRecycleChan() <- oPack
-		}
 		oRunner := NewOutputRunner(inChan)
 		config.router.AddOutChan(f["tag"], oRunner.InChan())
 

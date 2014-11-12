@@ -11,6 +11,12 @@ type GlobalConfig struct {
 	PoolSize int
 }
 
+func DefaultGC() *GlobalConfig {
+	gc := new(GlobalConfig)
+	gc.PoolSize = 100
+	return gc
+}
+
 func main() {
 	c := flag.String("c", "gofluent.conf", "config filepath")
 	p := flag.String("p", "", "write cpu profile to file")
