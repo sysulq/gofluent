@@ -85,6 +85,13 @@ func (self *inputTail) Run(runner InputRunner) error {
 		return err
 	}
 
+	f, err := os.OpenFile(self.pos_file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+	if err != nil {
+		Log("os.OpenFile", err)
+		return err
+	}
+	defer f.Close()
+
 	var re regexp.Regexp
 	if string(self.format[0]) == string("/") || string(self.format[len(self.format)-1]) == string("/") {
 		re = *regexp.MustCompile(strings.Trim(self.format, "/"))
@@ -94,6 +101,26 @@ func (self *inputTail) Run(runner InputRunner) error {
 	}
 
 	for line := range t.Lines {
+		offset, err := t.Tell()
+		if err != nil {
+			Log("Tell return error: ", err)
+			continue
+		}
+
+		str := strconv.Itoa(int(offset))
+
+		_, err = f.Seek(0, 0)
+		if err != nil {
+			Log("f.Seek", err)
+			return err
+		}
+
+		_, err = f.WriteString(str)
+		if err != nil {
+			Log("f.WriteString", err)
+			return err
+		}
+
 		pack := <-runner.InChan()
 
 		pack.MsgBytes = []byte(line.Text)
@@ -103,6 +130,7 @@ func (self *inputTail) Run(runner InputRunner) error {
 		if self.format == "regexp" {
 			text := re.FindSubmatch([]byte(line.Text))
 			if text == nil {
+				pack.Recycle()
 				continue
 			}
 
@@ -114,27 +142,11 @@ func (self *inputTail) Run(runner InputRunner) error {
 		} else if self.format == "json" {
 			err := json.Unmarshal([]byte(line.Text), &pack.Msg.Data)
 			if err != nil {
+				Log("json.Unmarshal", err)
+				pack.Recycle()
 				continue
 			}
 		}
-
-		offset, err := t.Tell()
-		if err != nil {
-			Log("Tell return error: ", err)
-		}
-
-		str := strconv.Itoa(int(offset))
-
-		f, err := os.OpenFile(self.pos_file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
-		if err != nil {
-			Log(err)
-		}
-
-		_, err = f.WriteString(str)
-		if err != nil {
-			Log(err)
-		}
-		f.Close()
 
 		runner.RouterChan() <- pack
 	}
