@@ -18,10 +18,60 @@ Installation
 Follow steps below and have fun!
 
 ```
-git clone https://github.com/hnlq715/gofluent
-cd gofluent
-export GOPATH=`pwd`
-go get github.com/ActiveState/tail
-go get github.com/t-k/fluent-logger-golang/fluent
+go get github.com/hnlq715/gofluent
 go build
+```
+
+Architecture
+========
+```
+    +---------+     +---------+     +---------+     +---------+
+    | server1 |     | server2 |     | server3 |     | serverN |
+    |---------|     |---------|     |---------|     |---------|
+    |syslog-ng|     |syslog-ng|     |syslog-ng|     |syslog-ng|
+    |---------|     |---------|     |---------|     |---------|
+    |gofluent |     |gofluent |     |gofluent |     |gofluent |
+    +---------+     +---------+     +---------+     +---------+
+        |               |               |               |
+         -----------------------------------------------
+                                |
+                                | HTTP POST
+                                V
+                        +-----------------+
+                        |                 |
+                        |      Httpmq     |
+                        |                 | 
+                        +-----------------+
+                                |
+                                | HTTP GET
+                                V 
+                        +-----------------+                 +-----------------+
+                        |                 |                 |                 |
+                        |   Preprocessor  | --------------> |     Storage     |
+                        |                 |                 |                 | 
+                        +-----------------+                 +-----------------+
+```
+
+Implementation
+========
+##Overview
+```
+Input -> Router -> Output
+```
+##Data flow
+```
+                        -------<-------- 
+                        |               |
+                        V               | generate pool
+       PipelineConfig.inputRecycleChan  | recycling
+            |           |               |        ^   
+            | is         ------->-------          \ 
+            |               ^           ^          \
+    InputRunner.inChan      |           |           \
+            |               |      pack.Recycle()    \
+            |               |           |             \
+    consume |               |           |              \
+            V               |           |               \
+          Input(Router.inChan) ---->  Router ----> (Router.outChan)Output.inChan
+
 ```
