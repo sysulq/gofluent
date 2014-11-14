@@ -63,15 +63,15 @@ Input -> Router -> Output
                         -------<-------- 
                         |               |
                         V               | generate pool
-       PipelineConfig.inputRecycleChan  | recycling
-            |           |               |        ^   
-            | is         ------->-------          \ 
-            |               ^           ^          \
-    InputRunner.inChan      |           |           \
-            |               |      pack.Recycle()    \
-            |               |           |             \
-    consume |               |           |              \
-            V               |           |               \
+       InputRunner.inputRecycleChan     | recycling
+            |           |               |     ^   
+            |            ------->-------       \ 
+            |               ^           ^       \
+    InputRunner.inChan      |           |        \
+            |               |           |         \
+            |               |           |          \
+    consume |               |           |           \
+            V               |           |            \
           Input(Router.inChan) ---->  Router ----> (Router.outChan)Output.inChan
 
 ```
