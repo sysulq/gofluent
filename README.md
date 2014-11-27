@@ -6,15 +6,15 @@ This program is something acting like fluentd rewritten in Go.
 Table of Contents
 =================
 
-* [Introduction](#introction)
+* [Introduction](#introduction)
 * [Architecture](#architecture)
 * [Implementation](#implementation)
 	* [Overview](#overview)
 	* [Data flow](#data-flow)
 * [Plugins](#plugins)
-	* [Tail Input Plugin](#tail-input)
-	* [Httpsqs Output Plugin](#httpsqs-output)
-	* [Stdout Output Plugin](#stdout-output)
+	* [Tail Input Plugin](#tail-input-plugin)
+	* [Httpsqs Output Plugin](#httpsqs-output-plugin)
+	* [Stdout Output Plugin](#stdout-output-plugin)
 
 Introduction
 ============
