@@ -3,30 +3,34 @@ gofluent
 
 This program is something acting like fluentd rewritten in Go.
 
+Table of Contents
+=================
+
+* [Introduction](#introction)
+* [Architecture](#architecture)
+* [Implementation](#implementation)
+	* [Overview](#overview)
+	* [Data flow](#data-flow)
+* [Plugins](#plugins)
+	* [Tail Input Plugin](#tail-input)
+	* [Httpsqs Output Plugin](#httpsqs-output)
+	* [Stdout Output Plugin](#stdout-output)
+
 Introduction
-========
+============
 
 Fluentd is originally written in CRuby, which has too many dependecies.
 
 I hope fluentd to be simpler and cleaner, as its main feature is simplicity and rubostness.
 
-Installation
-========
-
-Follow steps below and have fun!
-
-```
-go get github.com/hnlq715/gofluent
-go build
-```
-
 Architecture
-========
+============
+
 ```
     +---------+     +---------+     +---------+     +---------+
     | server1 |     | server2 |     | server3 |     | serverN |
     |---------|     |---------|     |---------|     |---------|
-    |syslog-ng|     |syslog-ng|     |syslog-ng|     |syslog-ng|
+    |         |     |         |     |         |     |         |
     |---------|     |---------|     |---------|     |---------|
     |gofluent |     |gofluent |     |gofluent |     |gofluent |
     +---------+     +---------+     +---------+     +---------+
@@ -51,12 +55,14 @@ Architecture
 ```
 
 Implementation
-========
+==============
 ##Overview
+
 ```
 Input -> Router -> Output
 ```
 ##Data flow
+
 ```
                         -------<-------- 
                         |               |
@@ -75,7 +81,8 @@ Input -> Router -> Output
 ```
 
 Plugins
-========
+=======
+
 ##Tail Input Plugin
 The in_tail input plugin allows gofluent to read events from the tail of text files. Its behavior is similar to the tail -F command.
 
