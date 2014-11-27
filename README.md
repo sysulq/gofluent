@@ -56,12 +56,14 @@ Architecture
 
 Implementation
 ==============
-##Overview
+Overview
+--------
 
 ```
 Input -> Router -> Output
 ```
-##Data flow
+Data flow
+---------
 
 ```
                         -------<-------- 
@@ -83,7 +85,8 @@ Input -> Router -> Output
 Plugins
 =======
 
-##Tail Input Plugin
+Tail Input Plugin
+-----------------
 The in_tail input plugin allows gofluent to read events from the tail of text files. Its behavior is similar to the tail -F command.
 
 ####Example Configuration
@@ -120,7 +123,8 @@ This parameter is highly recommended. gofluent will record the position it last 
 pos_file /var/log/access.log.pos
 ```
 
-##Httpsqs Output Plugin
+Httpsqs Output Plugin
+---------------------
 The out_httpsqs output plugin allows gofluent to send data to httpsqs mq.
 ####Example Configuration
 out_httpsqs is included in gofluent’s core. No additional installation process is required.
@@ -145,7 +149,8 @@ The flush interval for sending data to httpsqs.
 ####gzip
 The gzip switch, default is on.
 
-##Forward Output Plugin
+Forward Output Plugin
+---------------------
 The out_forward output plugin allows gofluent to forward events to another gofluent.
 ####Example Configuration
 out_forward is included in gofluent’s core. No additional installation process is required.
@@ -168,7 +173,8 @@ The flush interval for sending data to httpsqs.
 ####connect_timeout
 The connect timeout value.
 
-##Stdout Output Plugin
+Stdout Output Plugin
+--------------------
 The out_stdout output plugin allows gofluent to print events to stdout.
 ####Example Configuration
 out_stdout is included in gofluent’s core. No additional installation process is required.
