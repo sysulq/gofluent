@@ -17,7 +17,6 @@ type OutputForward struct {
 	connect_timeout int
 	flush_interval  int
 
-	logger *log.Logger
 	codec  *codec.MsgpackHandle
 	enc    *codec.Encoder
 	conn   net.Conn
@@ -68,7 +67,7 @@ func (self *OutputForward) Run(runner OutputRunner) error {
 		case <-tick.C:
 			{
 				if self.buffer.Len() > 0 {
-					Log("flush ", self.buffer.Len())
+					log.Println("flush ", self.buffer.Len())
 					self.flush()
 				}
 			}
@@ -86,7 +85,7 @@ func (self *OutputForward) flush() error {
 	if self.conn == nil {
 		conn, err := net.DialTimeout("tcp", self.host+":"+strconv.Itoa(self.port), time.Second*time.Duration(self.connect_timeout))
 		if err != nil {
-			Log("%#v", err.Error())
+			log.Println("%#v", err.Error())
 			return err
 		} else {
 			self.conn = conn
@@ -97,12 +96,12 @@ func (self *OutputForward) flush() error {
 
 	n, err := self.buffer.WriteTo(self.conn)
 	if err != nil {
-		Log("Write failed. size: %d, buf size: %d, error: %#v", n, self.buffer.Len(), err.Error())
+		log.Println("Write failed. size: %d, buf size: %d, error: %#v", n, self.buffer.Len(), err.Error())
 		self.conn = nil
 		return err
 	}
 	if n > 0 {
-		Log("Forwarded: %d bytes (left: %d bytes)\n", n, self.buffer.Len())
+		log.Println("Forwarded: %d bytes (left: %d bytes)\n", n, self.buffer.Len())
 	}
 
 	self.conn = nil

@@ -1,5 +1,9 @@
 package main
 
+import (
+	"log"
+)
+
 type OutputStdout struct {
 }
 
@@ -11,7 +15,7 @@ func (self *OutputStdout) Run(runner OutputRunner) error {
 
 	for {
 		pack := <-runner.InChan()
-		Log("stdout", pack.Msg)
+		log.Println("stdout", pack.Msg)
 		pack.Recycle()
 	}
 

@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"os"
 	"sync/atomic"
 )
 
@@ -93,28 +91,24 @@ func Run(config *PipelineConfig) {
 		go func(cf map[string]string, iRunner InputRunner) {
 			intput_type, ok := cf["type"]
 			if !ok {
-				fmt.Println("no type configured")
-				os.Exit(-1)
+				log.Fatalln("no type configured")
 			}
 
 			input, ok := input_plugins[intput_type]
 			if !ok {
-				fmt.Println("unkown type ", intput_type)
-				os.Exit(-1)
+				log.Fatalln("unkown type ", intput_type)
 			}
 
 			in := input()
 
 			err := in.(Input).Init(cf)
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(-1)
+				log.Fatalln("in.(Input).Init", err)
 			}
 
 			err = in.(Input).Run(iRunner)
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(-1)
+				log.Fatalln("in.(Input).Run", err)
 			}
 		}(cf, iRunner)
 	}
@@ -129,28 +123,24 @@ func Run(config *PipelineConfig) {
 		go func(cf map[string]string, oRunner OutputRunner) {
 			output_type, ok := cf["type"]
 			if !ok {
-				fmt.Println("no type configured")
-				os.Exit(-1)
+				log.Fatalln("no type configured")
 			}
 
 			output_plugin, ok := output_plugins[output_type]
 			if !ok {
-				Log("unkown type ", output_type)
-				os.Exit(-1)
+				log.Fatalln("unkown type ", output_type)
 			}
 
 			out := output_plugin()
 
 			err := out.(Output).Init(cf)
 			if err != nil {
-				Log("out.(Output).Init", err)
-				os.Exit(-1)
+				log.Fatalln("out.(Output).Init", err)
 			}
 
 			err = out.(Output).Run(oRunner)
 			if err != nil {
-				Log("out.(Output).Run", err)
-				os.Exit(-1)
+				log.Fatalln("out.(Output).Run", err)
 			}
 		}(cf, oRunner)
 	}

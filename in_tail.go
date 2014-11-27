@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/ActiveState/tail"
 	"io/ioutil"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -41,17 +42,17 @@ func (self *inputTail) Init(f map[string]string) error {
 
 		str, err := ioutil.ReadFile(self.pos_file)
 		if err != nil {
-			Log("ioutil.ReadFile:", err)
+			log.Println("ioutil.ReadFile:", err)
 		}
 
 		f, err := os.Open(self.path)
 		if err != nil {
-			Log("os.Open:", err)
+			log.Println("os.Open:", err)
 		}
 
 		info, err := f.Stat()
 		if err != nil {
-			Log("f.Stat:", err)
+			log.Println("f.Stat:", err)
 			self.offset = 0
 		} else {
 			offset, _ := strconv.Atoi(string(str))
@@ -87,8 +88,7 @@ func (self *inputTail) Run(runner InputRunner) error {
 
 	f, err := os.OpenFile(self.pos_file, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
-		Log("os.OpenFile", err)
-		return err
+		log.Fatalln("os.OpenFile", err)
 	}
 	defer f.Close()
 
@@ -103,7 +103,7 @@ func (self *inputTail) Run(runner InputRunner) error {
 	for line := range t.Lines {
 		offset, err := t.Tell()
 		if err != nil {
-			Log("Tell return error: ", err)
+			log.Println("Tell return error: ", err)
 			continue
 		}
 
@@ -111,13 +111,13 @@ func (self *inputTail) Run(runner InputRunner) error {
 
 		_, err = f.Seek(0, 0)
 		if err != nil {
-			Log("f.Seek", err)
+			log.Println("f.Seek", err)
 			return err
 		}
 
 		_, err = f.WriteString(str)
 		if err != nil {
-			Log("f.WriteString", err)
+			log.Println("f.WriteString", err)
 			return err
 		}
 
@@ -142,7 +142,7 @@ func (self *inputTail) Run(runner InputRunner) error {
 		} else if self.format == "json" {
 			err := json.Unmarshal([]byte(line.Text), &pack.Msg.Data)
 			if err != nil {
-				Log("json.Unmarshal", err)
+				log.Println("json.Unmarshal", err)
 				pack.Recycle()
 				continue
 			}

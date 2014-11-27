@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -81,7 +82,7 @@ func (self *outputHttpsqs) Run(runner OutputRunner) error {
 				b, err := json.Marshal(pack.Msg.Data)
 
 				if err != nil {
-					Log("json.Marshal:", err)
+					log.Println("json.Marshal:", err)
 					pack.Recycle()
 					continue
 				}
@@ -120,16 +121,16 @@ func (self *outputHttpsqs) flush() {
 		req.Header.Add("Content-Encoding", "gzip")
 		req.Header.Add("Content-Type", "application/json")
 
-		Log("url:", url, "count:", self.count, "length:", len(v), "gziped:", buf.Len())
+		log.Println("url:", url, "count:", self.count, "length:", len(v), "gziped:", buf.Len())
 
 		resp, err := self.client.Do(req)
 		if err != nil {
-			Log("post failed:", err)
+			log.Println("post failed:", err)
 			continue
 		}
 
 		v, _ := ioutil.ReadAll(resp.Body)
-		Log("StatusCode:", resp.StatusCode, string(v), "Pos:", resp.Header.Get("Pos"))
+		log.Println("StatusCode:", resp.StatusCode, string(v), "Pos:", resp.Header.Get("Pos"))
 
 		resp.Body.Close()
 		self.buffer[k] = self.buffer[k][0:0]
