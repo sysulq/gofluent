@@ -89,24 +89,28 @@ Tail Input Plugin
 -----------------
 The in_tail input plugin allows gofluent to read events from the tail of text files. Its behavior is similar to the tail -F command.
 
-####Example Configuration
+Example Configuration
+
 in_tail is included in gofluent’s core. No additional installation process is required.
 ```
 <source>
   type tail
-  path /var/log/json.log
-  pos_file /var/log/json.log.pos
+  path /var/log/httpd-access.log
+  pos_file /var/log/httpd-access.log.pos
   tag apache.access
-  format json
+  format /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/
 </source>
 ```
-####type (required)
+*type (required)*
 The value must be tail.
-####tag (required)
+
+*tag (required)*
 The tag of the event.
-####path (required)
+
+*path (required)*
 The paths to read.
-####format (required)
+
+*format (required)*
 The format of the log. It is the name of a template or regexp surrounded by ‘/’.
 The regexp must have at least one named capture (?P\<NAME\>PATTERN).
 
@@ -117,7 +121,7 @@ One JSON map, per line. This is the most straight forward format :).
 ```
 format json
 ```
-####pos_file (highly recommended)
+*pos_file (highly recommended)*
 This parameter is highly recommended. gofluent will record the position it last read into this file.
 ```
 pos_file /var/log/access.log.pos
@@ -126,7 +130,9 @@ pos_file /var/log/access.log.pos
 Httpsqs Output Plugin
 ---------------------
 The out_httpsqs output plugin allows gofluent to send data to httpsqs mq.
-####Example Configuration
+
+Example Configuration
+
 out_httpsqs is included in gofluent’s core. No additional installation process is required.
 ```
 <match httpsqs.**>
@@ -136,23 +142,30 @@ out_httpsqs is included in gofluent’s core. No additional installation process
   flush_interval 10
 </match>
 ```
-####type (required)
+*type (required)*
 The value must be httpsqs.
-####host (required)
+
+*host (required)*
 The output target host ip.
-####port (required)
+
+*port (required)*
 The output target host port.
-####auth (highly recommended)
+
+*auth (highly recommended)*
 The auth password for httpsqs.
-####flush_interval
+
+*flush_interval*
 The flush interval for sending data to httpsqs.
-####gzip
+
+*gzip*
 The gzip switch, default is on.
 
 Forward Output Plugin
 ---------------------
 The out_forward output plugin allows gofluent to forward events to another gofluent.
-####Example Configuration
+
+Example Configuration
+
 out_forward is included in gofluent’s core. No additional installation process is required.
 ```
 <match forward.**>
@@ -162,27 +175,33 @@ out_forward is included in gofluent’s core. No additional installation process
   flush_interval 10
 </match>
 ```
-####type (required)
+*type (required)*
 The value must be forward.
-####host (required)
+
+*host (required)*
 The output target host ip.
-####port (required)
+
+*port (required)*
 The output target host port.
-####flush_interval
+
+*flush_interval*
 The flush interval for sending data to httpsqs.
-####connect_timeout
+
+*connect_timeout*
 The connect timeout value.
 
 Stdout Output Plugin
 --------------------
 The out_stdout output plugin allows gofluent to print events to stdout.
-####Example Configuration
+
+Example Configuration
+
 out_stdout is included in gofluent’s core. No additional installation process is required.
 ```
 <match stdout.**>
   type stdout
 </match>
 ```
-####type (required)
+*type (required)*
 The value must be stdout.
 
