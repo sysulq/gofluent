@@ -29,6 +29,7 @@ func main() {
 	}
 	defer f.Close()
 
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.SetOutput(f)
 
 	if *p != "" {
