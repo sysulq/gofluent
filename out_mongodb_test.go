@@ -14,6 +14,8 @@ func TestCreateAndInsert(t *testing.T) {
 		"port":        "27017",
 		"database":    "test",
 		"collection":  "test",
+		"user":        "test",
+		"password":    "test",
 		"capped":      "on",
 		"capped_size": "1024",
 	}

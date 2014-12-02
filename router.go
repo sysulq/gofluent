@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"regexp"
 	"sync/atomic"
 )
@@ -34,14 +35,21 @@ func (self *Router) AddInChan(inChan chan *PipelinePack) {
 }
 
 func (self *Router) Loop() {
-	for {
-		pack := <-self.inChan
+	for pack := range self.inChan {
 
 		for re, outChan := range self.outChan {
 			flag := re.MatchString(pack.Msg.Tag)
 			if flag == true {
 				atomic.AddInt32(&pack.RefCount, 1)
-				outChan <- pack
+				select {
+				case outChan <- pack:
+				default:
+					{
+						log.Println("outChan fulled, tag=", pack.Msg.Tag)
+						<-outChan
+						outChan <- pack
+					}
+				}
 			}
 		}
 

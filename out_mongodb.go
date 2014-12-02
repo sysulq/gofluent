@@ -92,6 +92,7 @@ func (this *outputMongo) Run(runner OutputRunner) error {
 		select {
 		case pack := <-runner.InChan():
 			{
+
 				session.Refresh()
 				coll := session.DB(this.database).C(this.collection)
 
