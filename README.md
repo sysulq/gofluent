@@ -15,6 +15,7 @@ Table of Contents
 	* [Tail Input Plugin](#tail-input-plugin)
 	* [Httpsqs Output Plugin](#httpsqs-output-plugin)
 	* [Stdout Output Plugin](#stdout-output-plugin)
+	* [Mongodb Output Plugin](#mongodb-output-plugin)
 
 Introduction
 ============
