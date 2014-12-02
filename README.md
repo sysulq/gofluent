@@ -205,3 +205,49 @@ out_stdout is included in gofluent’s core. No additional installation process 
 *type (required)*
 The value must be stdout.
 
+Mongodb Output Plugin
+---------------------
+The out_mongodb output plugin allows gofluent to send message to mongodb.
+
+Example Configuration
+
+out_mongodb is included in gofluent's core. No additional installation process is required.
+```
+<match mongodb.**>
+  type mongodb
+  host localhost
+  port 27017
+  capped on
+  capped_size 1024
+  database test
+  collection test
+  user test
+  password test
+</match>
+```
+*type(required)* 
+The value must be mongodb.
+
+*host (required)*
+The output target host ip.
+
+*port (required)*
+The output target host port.
+
+*capped (highly recommended)*
+To create a capped collection.
+
+*capped_size*
+Specify the actual size(MB) of the capped collection.
+
+*database(required)*
+The name of the database to be created or used.
+
+*collection(required)*
+The name of the collection to be created or used.
+
+*user(highly recommended)*
+The user name to login the database.
+
+*password(highly recommended)*
+The password to login the database.
