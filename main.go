@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"io"
 	"log"
 	"os"
 	"runtime/pprof"
@@ -29,8 +30,9 @@ func main() {
 	}
 	defer f.Close()
 
+	multi := io.MultiWriter(f, os.Stdout)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-	log.SetOutput(f)
+	log.SetOutput(multi)
 
 	if *p != "" {
 		f, err := os.Create(*p)
