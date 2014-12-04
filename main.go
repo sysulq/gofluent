@@ -4,8 +4,9 @@ import (
 	"flag"
 	"io"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
-	"runtime/pprof"
 )
 
 type GlobalConfig struct {
@@ -35,14 +36,8 @@ func main() {
 	log.SetOutput(multi)
 
 	if *p != "" {
-		f, err := os.Create(*p)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		pprof.StartCPUProfile(f)
-		defer func() {
-			pprof.StopCPUProfile()
-			f.Close()
+		go func() {
+			log.Println(http.ListenAndServe("0.0.0.0:"+*p, nil))
 		}()
 	}
 
