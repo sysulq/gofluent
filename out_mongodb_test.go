@@ -19,20 +19,27 @@ func TestCreateAndInsert(t *testing.T) {
 		"capped":      "on",
 		"capped_size": "1024",
 	}
+	mongo := new(outputMongo)
+	mongo.Init(cf)
+	pack := new(PipelinePack)
+	pack.Msg.Data = map[string]string{
+		"data":  "test",
+		"hello": "world",
+	}
+	inChan := make(chan *PipelinePack, 1)
+	oRunner := NewOutputRunner(inChan)
+	inChan <- pack
+
+	go mongo.Run(oRunner)
+	time.Sleep(1 * time.Second)
 
 	Convey("Test create and insert ops", t, func() {
-		mongo := new(outputMongo)
-		mongo.Init(cf)
-		inChan := make(chan *PipelinePack, 1)
-		oRunner := NewOutputRunner(inChan)
-		pack := new(PipelinePack)
-		pack.Msg.Data = map[string]string{
-			"data":  "test",
-			"hello": "world",
-		}
-		go mongo.Run(oRunner)
 
-		session, err := mgo.Dial(cf["host"] + ":" + cf["port"])
+		//[mongodb://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
+		url := "mongodb://" + cf["user"] + ":" + cf["password"] + "@" +
+			cf["host"] + ":" + cf["port"] + "/" + cf["database"]
+
+		session, err := mgo.Dial(url)
 		if err != nil {
 			So(err.Error(), ShouldEqual, "no reachable servers")
 			return
@@ -40,11 +47,7 @@ func TestCreateAndInsert(t *testing.T) {
 		So(session, ShouldNotEqual, nil)
 		defer session.Close()
 		coll := session.DB(cf["database"]).C(cf["collection"])
-		coll.DropCollection()
 		So(coll, ShouldNotEqual, nil)
-
-		inChan <- pack
-		time.Sleep(1 * time.Second)
 
 		result := make(map[string]string)
 		err1 := coll.Find(nil).One(&result)
