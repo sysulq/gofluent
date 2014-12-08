@@ -5,6 +5,7 @@ import (
 	"github.com/ugorji/go/codec"
 	"log"
 	"net"
+	"os"
 	"reflect"
 	"strconv"
 	"time"
@@ -17,10 +18,11 @@ type OutputForward struct {
 	connect_timeout int
 	flush_interval  int
 
-	codec  *codec.MsgpackHandle
-	enc    *codec.Encoder
-	conn   net.Conn
-	buffer bytes.Buffer
+	codec   *codec.MsgpackHandle
+	enc     *codec.Encoder
+	conn    net.Conn
+	buffer  bytes.Buffer
+	backend BackendQueue
 }
 
 func (self *OutputForward) Init(config map[string]string) error {
@@ -59,6 +61,8 @@ func (self *OutputForward) Init(config map[string]string) error {
 }
 
 func (self *OutputForward) Run(runner OutputRunner) error {
+	l := log.New(os.Stderr, "", log.LstdFlags)
+	self.backend = newDiskQueue("test", os.TempDir(), 1024768*100, 2500, 2*time.Second, l)
 
 	tick := time.NewTicker(time.Second * time.Duration(self.flush_interval))
 
@@ -66,8 +70,8 @@ func (self *OutputForward) Run(runner OutputRunner) error {
 		select {
 		case <-tick.C:
 			{
-				if self.buffer.Len() > 0 {
-					log.Println("flush ", self.buffer.Len())
+				if self.backend.Depth() > 0 {
+					log.Println("flush ", self.backend.Depth())
 					self.flush()
 				}
 			}
@@ -93,18 +97,24 @@ func (self *OutputForward) flush() error {
 	}
 
 	defer self.conn.Close()
+	var buff bytes.Buffer
+	for i := int64(0); i < self.backend.Depth(); i++ {
+		buff.Read(<-self.backend.ReadChan())
+	}
 
-	n, err := self.buffer.WriteTo(self.conn)
+	n, err := buff.WriteTo(self.conn)
 	if err != nil {
-		log.Println("Write failed. size: %d, buf size: %d, error: %#v", n, self.buffer.Len(), err.Error())
+		log.Println("Write failed. size: %d, buf size: %d, error: %#v", n, buff.Len(), err.Error())
 		self.conn = nil
 		return err
 	}
 	if n > 0 {
-		log.Println("Forwarded: %d bytes (left: %d bytes)\n", n, self.buffer.Len())
+		log.Printf("Forwarded: %d bytes (left: %d bytes)\n", n, buff.Len())
 	}
 
+	self.backend.Empty()
 	self.conn = nil
+
 	return nil
 
 }
@@ -118,6 +128,8 @@ func (self *OutputForward) encodeRecordSet(msg Message) error {
 	if err != nil {
 		return err
 	}
+	self.backend.Put(self.buffer.Bytes())
+	self.buffer.Reset()
 	return err
 }
 
