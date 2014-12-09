@@ -128,6 +128,9 @@ This parameter is highly recommended. gofluent will record the position it last 
 pos_file /var/log/access.log.pos
 ```
 
+*sync_interval*
+The sync interval of pos file, default is 2s.
+
 Httpsqs Output Plugin
 ---------------------
 The out_httpsqs output plugin allows gofluent to send data to httpsqs mq.
@@ -190,6 +193,15 @@ The flush interval for sending data to httpsqs.
 
 *connect_timeout*
 The connect timeout value.
+
+*sync_interval*
+The sync interval of metadata file, default is 2s.
+
+*buffer_path(required)*
+The disk buffer path for output plugin.
+
+*buffer_queue_limit*
+The queue limit of disk buffer, default is 100M.
 
 Stdout Output Plugin
 --------------------
