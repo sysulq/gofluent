@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type inputTail struct {
@@ -17,10 +18,13 @@ type inputTail struct {
 	tag      string
 	pos_file string
 
-	offset int64
+	offset        int64
+	sync_interval int
 }
 
 func (self *inputTail) Init(f map[string]string) error {
+	self.sync_interval = 2
+
 	value := f["path"]
 	if len(value) > 0 {
 		self.path = value
@@ -64,6 +68,15 @@ func (self *inputTail) Init(f map[string]string) error {
 		}
 	}
 
+	value = f["sync_interval"]
+	if len(value) > 0 {
+		sync_interval, err := strconv.Atoi(value)
+		if err != nil {
+			return err
+		}
+		self.sync_interval = sync_interval
+	}
+
 	return nil
 }
 
@@ -100,55 +113,64 @@ func (self *inputTail) Run(runner InputRunner) error {
 
 	}
 
-	for line := range t.Lines {
-		offset, err := t.Tell()
-		if err != nil {
-			log.Println("Tell return error: ", err)
-			continue
-		}
+	tick := time.NewTicker(time.Second * time.Duration(self.sync_interval))
+	count := 0
 
-		str := strconv.Itoa(int(offset))
+	for {
+		select {
+		case <-tick.C:
+			{
+				if count > 0 {
+					offset, err := t.Tell()
+					if err != nil {
+						log.Println("Tell return error: ", err)
+						continue
+					}
 
-		_, err = f.Seek(0, 0)
-		if err != nil {
-			log.Println("f.Seek", err)
-			return err
-		}
+					str := strconv.Itoa(int(offset))
 
-		_, err = f.WriteString(str)
-		if err != nil {
-			log.Println("f.WriteString", err)
-			return err
-		}
+					_, err = f.WriteAt([]byte(str), 0)
+					if err != nil {
+						log.Println("f.WriteAt", err)
+						return err
+					}
 
-		pack := <-runner.InChan()
-
-		pack.MsgBytes = []byte(line.Text)
-		pack.Msg.Tag = self.tag
-		pack.Msg.Timestamp = line.Time.Unix()
-
-		if self.format == "regexp" {
-			text := re.FindSubmatch([]byte(line.Text))
-			if text == nil {
-				pack.Recycle()
-				continue
-			}
-
-			for i, name := range re.SubexpNames() {
-				if i != 0 {
-					pack.Msg.Data[name] = string(text[i])
+					count = 0
 				}
 			}
-		} else if self.format == "json" {
-			err := json.Unmarshal([]byte(line.Text), &pack.Msg.Data)
-			if err != nil {
-				log.Println("json.Unmarshal", err)
-				pack.Recycle()
-				continue
+		case line := <-t.Lines:
+			{
+				pack := <-runner.InChan()
+
+				pack.MsgBytes = []byte(line.Text)
+				pack.Msg.Tag = self.tag
+				pack.Msg.Timestamp = line.Time.Unix()
+
+				if self.format == "regexp" {
+					text := re.FindSubmatch([]byte(line.Text))
+					if text == nil {
+						pack.Recycle()
+						continue
+					}
+
+					for i, name := range re.SubexpNames() {
+						if i != 0 {
+							pack.Msg.Data[name] = string(text[i])
+						}
+					}
+				} else if self.format == "json" {
+					err := json.Unmarshal([]byte(line.Text), &pack.Msg.Data)
+					if err != nil {
+						log.Println("json.Unmarshal", err)
+						pack.Recycle()
+						continue
+					}
+				}
+
+				count++
+				runner.RouterChan() <- pack
 			}
 		}
-
-		runner.RouterChan() <- pack
 	}
 
 	err = t.Wait()

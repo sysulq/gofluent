@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"time"
@@ -15,8 +16,12 @@ type OutputForward struct {
 	host string
 	port int
 
-	connect_timeout int
-	flush_interval  int
+	connect_timeout    int
+	flush_interval     int
+	sync_interval      int
+	buffer_queue_limit int64
+
+	buffer_path string
 
 	codec   *codec.MsgpackHandle
 	enc     *codec.Encoder
@@ -34,6 +39,9 @@ func (self *OutputForward) Init(config map[string]string) error {
 	self.host = "localhost"
 	self.port = 8888
 	self.flush_interval = 10
+	self.sync_interval = 2
+	self.buffer_path = "/tmp/test"
+	self.buffer_queue_limit = 100
 	self.connect_timeout = 10
 	self.codec = &_codec
 
@@ -57,12 +65,39 @@ func (self *OutputForward) Init(config map[string]string) error {
 		self.flush_interval, _ = strconv.Atoi(value)
 	}
 
+	value = config["sync_interval"]
+	if len(value) > 0 {
+		sync_interval, err := strconv.Atoi(value)
+		if err != nil {
+			return err
+		}
+		self.sync_interval = sync_interval
+	}
+
+	value = config["buffer_path"]
+	if len(value) > 0 {
+		self.buffer_path = value
+	}
+
+	value = config["buffer_queue_limit"]
+	if len(value) > 0 {
+		buffer_queue_limit, err := strconv.Atoi(value)
+		if err != nil {
+			return err
+		}
+		self.buffer_queue_limit = int64(buffer_queue_limit)
+	}
+
 	return nil
 }
 
 func (self *OutputForward) Run(runner OutputRunner) error {
 	l := log.New(os.Stderr, "", log.LstdFlags)
-	self.backend = newDiskQueue("test", os.TempDir(), 1024768*100, 2500, 2*time.Second, l)
+
+	sync_interval := time.Duration(self.sync_interval)
+	base := filepath.Base(self.buffer_path)
+	dir := filepath.Dir(self.buffer_path)
+	self.backend = newDiskQueue(base, dir, self.buffer_queue_limit*1024*1024, 2500, sync_interval*time.Second, l)
 
 	tick := time.NewTicker(time.Second * time.Duration(self.flush_interval))
 
@@ -89,7 +124,7 @@ func (self *OutputForward) flush() error {
 	if self.conn == nil {
 		conn, err := net.DialTimeout("tcp", self.host+":"+strconv.Itoa(self.port), time.Second*time.Duration(self.connect_timeout))
 		if err != nil {
-			log.Println("%#v", err.Error())
+			log.Println("net.DialTimeout failed, err", err)
 			return err
 		} else {
 			self.conn = conn
@@ -97,22 +132,25 @@ func (self *OutputForward) flush() error {
 	}
 
 	defer self.conn.Close()
-	var buff bytes.Buffer
+	count := 0
 	for i := int64(0); i < self.backend.Depth(); i++ {
-		buff.Read(<-self.backend.ReadChan())
+		self.buffer.Write(<-self.backend.ReadChan())
+		count++
 	}
 
-	n, err := buff.WriteTo(self.conn)
+	log.Println("buffer len:", self.buffer.Len(), "count:", count, "depth:", self.backend.Depth())
+	n, err := self.buffer.WriteTo(self.conn)
 	if err != nil {
-		log.Println("Write failed. size: %d, buf size: %d, error: %#v", n, buff.Len(), err.Error())
+		log.Printf("Write failed. size: %d, buf size: %d, error: %#v", n, self.buffer.Len(), err.Error())
 		self.conn = nil
 		return err
 	}
 	if n > 0 {
-		log.Printf("Forwarded: %d bytes (left: %d bytes)\n", n, buff.Len())
+		log.Printf("Forwarded: %d bytes (left: %d bytes)\n", n, self.buffer.Len())
 	}
 
-	self.backend.Empty()
+	self.buffer.Reset()
+	//self.backend.Empty()
 	self.conn = nil
 
 	return nil

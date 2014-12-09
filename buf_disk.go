@@ -590,6 +590,7 @@ func (d *diskQueue) ioLoop() {
 		// in a select are skipped, we set r to d.readChan only when there is data to read
 		case r <- dataRead:
 			// moveForward sets needSync flag if a file is removed
+			count++
 			d.moveForward()
 		case <-d.emptyChan:
 			d.emptyResponseChan <- d.deleteAllFiles()
