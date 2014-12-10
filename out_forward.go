@@ -133,7 +133,8 @@ func (self *OutputForward) flush() error {
 
 	defer self.conn.Close()
 	count := 0
-	for i := int64(0); i < self.backend.Depth(); i++ {
+	depth := self.backend.Depth()
+	for i := int64(0); i < depth; i++ {
 		self.buffer.Write(<-self.backend.ReadChan())
 		count++
 	}
