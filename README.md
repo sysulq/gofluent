@@ -198,10 +198,13 @@ The connect timeout value.
 The sync interval of metadata file, default is 2s.
 
 *buffer_path(required)*
-The disk buffer path for output plugin.
+The disk buffer path for output plugin, default is /tmp/test.
 
 *buffer_queue_limit*
-The queue limit of disk buffer, default is 100M.
+The queue limit of disk buffer, default is 64M.
+
+*buffer_chunk_limit*
+The chunk limit of disk buffer to forward, default is 8M.
 
 Stdout Output Plugin
 --------------------

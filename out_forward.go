@@ -20,6 +20,7 @@ type OutputForward struct {
 	flush_interval     int
 	sync_interval      int
 	buffer_queue_limit int64
+	buffer_chunk_limit int64
 
 	buffer_path string
 
@@ -41,7 +42,8 @@ func (self *OutputForward) Init(config map[string]string) error {
 	self.flush_interval = 10
 	self.sync_interval = 2
 	self.buffer_path = "/tmp/test"
-	self.buffer_queue_limit = 100
+	self.buffer_queue_limit = 64 * 1024 * 1024
+	self.buffer_chunk_limit = 8 * 1024 * 1024
 	self.connect_timeout = 10
 	self.codec = &_codec
 
@@ -85,9 +87,17 @@ func (self *OutputForward) Init(config map[string]string) error {
 		if err != nil {
 			return err
 		}
-		self.buffer_queue_limit = int64(buffer_queue_limit)
+		self.buffer_queue_limit = int64(buffer_queue_limit) * 1024 * 1024
 	}
 
+	value = config["buffer_chunk_limit"]
+	if len(value) > 0 {
+		buffer_chunk_limit, err := strconv.Atoi(value)
+		if err != nil {
+			return err
+		}
+		self.buffer_chunk_limit = int64(buffer_chunk_limit) * 1024 * 1024
+	}
 	return nil
 }
 
@@ -97,7 +107,7 @@ func (self *OutputForward) Run(runner OutputRunner) error {
 	sync_interval := time.Duration(self.sync_interval)
 	base := filepath.Base(self.buffer_path)
 	dir := filepath.Dir(self.buffer_path)
-	self.backend = newDiskQueue(base, dir, self.buffer_queue_limit*1024*1024, 2500, sync_interval*time.Second, l)
+	self.backend = newDiskQueue(base, dir, self.buffer_queue_limit, 2500, sync_interval*time.Second, l)
 
 	tick := time.NewTicker(time.Second * time.Duration(self.flush_interval))
 
@@ -106,7 +116,7 @@ func (self *OutputForward) Run(runner OutputRunner) error {
 		case <-tick.C:
 			{
 				if self.backend.Depth() > 0 {
-					log.Println("flush ", self.backend.Depth())
+					log.Printf("flush %d left", self.backend.Depth())
 					self.flush()
 				}
 			}
@@ -132,14 +142,21 @@ func (self *OutputForward) flush() error {
 	}
 
 	defer self.conn.Close()
+
 	count := 0
 	depth := self.backend.Depth()
-	for i := int64(0); i < depth; i++ {
-		self.buffer.Write(<-self.backend.ReadChan())
-		count++
+
+	if self.buffer.Len() == 0 {
+		for i := int64(0); i < depth; i++ {
+			self.buffer.Write(<-self.backend.ReadChan())
+			count++
+			if int64(self.buffer.Len()) > self.buffer_chunk_limit {
+				break
+			}
+		}
 	}
 
-	log.Println("buffer len:", self.buffer.Len(), "count:", count, "depth:", self.backend.Depth())
+	log.Println("buffer sent:", self.buffer.Len(), "count:", count)
 	n, err := self.buffer.WriteTo(self.conn)
 	if err != nil {
 		log.Printf("Write failed. size: %d, buf size: %d, error: %#v", n, self.buffer.Len(), err.Error())
@@ -150,8 +167,6 @@ func (self *OutputForward) flush() error {
 		log.Printf("Forwarded: %d bytes (left: %d bytes)\n", n, self.buffer.Len())
 	}
 
-	self.buffer.Reset()
-	//self.backend.Empty()
 	self.conn = nil
 
 	return nil
