@@ -14,8 +14,6 @@ func TestCreateAndInsert(t *testing.T) {
 		"port":        "27017",
 		"database":    "test",
 		"collection":  "test",
-		"user":        "test",
-		"password":    "test",
 		"capped":      "on",
 		"capped_size": "1024",
 	}
@@ -36,7 +34,7 @@ func TestCreateAndInsert(t *testing.T) {
 	Convey("Test create and insert ops", t, func() {
 
 		//[mongodb://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
-		url := "mongodb://" + cf["user"] + ":" + cf["password"] + "@" +
+		url := "mongodb://" +
 			cf["host"] + ":" + cf["port"] + "/" + cf["database"]
 
 		session, err := mgo.Dial(url)

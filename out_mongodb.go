@@ -72,12 +72,13 @@ func (this *outputMongo) Init(cf map[string]string) error {
 func (this *outputMongo) Run(runner OutputRunner) error {
 
 	//[mongodb://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
-	url := "mongodb://" + this.user + ":" + this.password + "@" +
+	url := "mongodb://" +
 		this.host + ":" + this.port + "/" + this.database
 
 	session, err := mgo.Dial(url)
 	if err != nil {
-		log.Fatalln("mgo.Dial failed, err:", err)
+		log.Println("mgo.Dial failed, err:", err)
+		return err
 	}
 
 	info := &mgo.CollectionInfo{
@@ -87,6 +88,9 @@ func (this *outputMongo) Run(runner OutputRunner) error {
 
 	coll := session.DB(this.database).C(this.collection)
 	err = coll.Create(info)
+	if err != nil {
+		return err
+	}
 
 	for {
 		select {
