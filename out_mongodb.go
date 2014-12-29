@@ -72,8 +72,11 @@ func (this *outputMongo) Init(cf map[string]string) error {
 func (this *outputMongo) Run(runner OutputRunner) error {
 
 	//[mongodb://][user:pass@]host1[:port1][,host2[:port2],...][/database][?options]
-	url := "mongodb://" +
-		this.host + ":" + this.port + "/" + this.database
+	url := "mongodb://"
+	if len(this.user) != 0 && len(this.password) != 0 {
+		url += this.user + ":" + this.password + "@"
+	}
+	url += this.host + ":" + this.port + "/" + this.database
 
 	session, err := mgo.Dial(url)
 	if err != nil {
