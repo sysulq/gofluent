@@ -24,11 +24,12 @@ type OutputForward struct {
 
 	buffer_path string
 
-	codec   *codec.MsgpackHandle
-	enc     *codec.Encoder
-	conn    net.Conn
-	buffer  bytes.Buffer
-	backend BackendQueue
+	codec      *codec.MsgpackHandle
+	enc        *codec.Encoder
+	conn       net.Conn
+	msg_buffer bytes.Buffer
+	buffer     bytes.Buffer
+	backend    BackendQueue
 }
 
 func (self *OutputForward) Init(config map[string]string) error {
@@ -176,14 +177,14 @@ func (self *OutputForward) flush() error {
 func (self *OutputForward) encodeRecordSet(msg Message) error {
 	v := []interface{}{msg.Tag, msg.Timestamp, msg.Data}
 	if self.enc == nil {
-		self.enc = codec.NewEncoder(&self.buffer, self.codec)
+		self.enc = codec.NewEncoder(&self.msg_buffer, self.codec)
 	}
 	err := self.enc.Encode(v)
 	if err != nil {
 		return err
 	}
-	self.backend.Put(self.buffer.Bytes())
-	self.buffer.Reset()
+	self.backend.Put(self.msg_buffer.Bytes())
+	self.msg_buffer.Reset()
 	return err
 }
 
