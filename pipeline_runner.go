@@ -8,7 +8,7 @@ import (
 type Message struct {
 	Tag       string
 	Timestamp int64
-	Data      map[string]string
+	Data      map[string]interface{}
 }
 
 type PipelinePack struct {
@@ -20,7 +20,7 @@ type PipelinePack struct {
 
 func NewPipelinePack(recycleChan chan *PipelinePack) (pack *PipelinePack) {
 	msgBytes := make([]byte, 100)
-	data := make(map[string]string)
+	data := make(map[string]interface{})
 	msg := Message{Data: data}
 	return &PipelinePack{
 		MsgBytes:    msgBytes,
