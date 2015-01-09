@@ -91,7 +91,7 @@ func (this *outputMongo) Run(runner OutputRunner) error {
 
 	coll := session.DB(this.database).C(this.collection)
 	err = coll.Create(info)
-	if err != nil {
+	if err != nil && err.Error() != "collection already exists" {
 		return err
 	}
 
@@ -99,7 +99,6 @@ func (this *outputMongo) Run(runner OutputRunner) error {
 		select {
 		case pack := <-runner.InChan():
 			{
-
 				session.Refresh()
 				coll := session.DB(this.database).C(this.collection)
 

@@ -20,7 +20,7 @@ func TestCreateAndInsert(t *testing.T) {
 	mongo := new(outputMongo)
 	mongo.Init(cf)
 	pack := new(PipelinePack)
-	pack.Msg.Data = map[string]string{
+	pack.Msg.Data = map[string]interface{}{
 		"data":  "test",
 		"hello": "world",
 	}
