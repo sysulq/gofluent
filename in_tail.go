@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"github.com/ugorji/go/codec"
 	"github.com/ActiveState/tail"
 	"io/ioutil"
 	"log"
@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"reflect"
 )
 
 type inputTail struct {
@@ -20,9 +21,12 @@ type inputTail struct {
 
 	offset        int64
 	sync_interval int
+	codec    *codec.JsonHandle
+	time_key string
 }
 
 func (self *inputTail) Init(f map[string]string) error {
+
 	self.sync_interval = 2
 
 	value := f["path"]
@@ -33,6 +37,18 @@ func (self *inputTail) Init(f map[string]string) error {
 	value = f["format"]
 	if len(value) > 0 {
 		self.format = value
+		if(value == "json"){
+			_codec := codec.JsonHandle{}
+			_codec.MapType = reflect.TypeOf(map[string]interface{}(nil))
+			self.codec = &_codec
+
+			value = f["time_key"];
+			if len(value) > 0{
+				self.time_key = value
+			}else{
+				self.time_key = "time"
+			}
+		}
 	}
 
 	value = f["tag"]
@@ -159,11 +175,27 @@ func (self *inputTail) Run(runner InputRunner) error {
 						}
 					}
 				} else if self.format == "json" {
-					err := json.Unmarshal([]byte(line.Text), &pack.Msg.Data)
+					dec := codec.NewDecoderBytes([]byte(line.Text), self.codec);
+					err := dec.Decode(&pack.Msg.Data);
 					if err != nil {
 						log.Println("json.Unmarshal", err)
 						pack.Recycle()
 						continue
+					}else{
+						t, ok := pack.Msg.Data[self.time_key]
+						if(ok){
+							if time, xx := t.(uint64); xx{
+								pack.Msg.Timestamp = int64(time)
+								delete(pack.Msg.Data, self.time_key)
+							}else if time64, oo := t.(int64); oo{
+								pack.Msg.Timestamp = time64
+								delete(pack.Msg.Data, self.time_key)
+							}else{
+								log.Println("time is not int64, ", t, " typeof:", reflect.TypeOf(t));
+								pack.Recycle();
+								continue;
+							}
+						}
 					}
 				}
 
