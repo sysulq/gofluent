@@ -1,16 +1,16 @@
 package main
 
 import (
-	"github.com/ugorji/go/codec"
 	"github.com/ActiveState/tail"
+	"github.com/ugorji/go/codec"
 	"io/ioutil"
 	"log"
 	"os"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"reflect"
 )
 
 type inputTail struct {
@@ -21,8 +21,8 @@ type inputTail struct {
 
 	offset        int64
 	sync_interval int
-	codec    *codec.JsonHandle
-	time_key string
+	codec         *codec.JsonHandle
+	time_key      string
 }
 
 func (self *inputTail) Init(f map[string]string) error {
@@ -37,15 +37,15 @@ func (self *inputTail) Init(f map[string]string) error {
 	value = f["format"]
 	if len(value) > 0 {
 		self.format = value
-		if(value == "json"){
+		if value == "json" {
 			_codec := codec.JsonHandle{}
 			_codec.MapType = reflect.TypeOf(map[string]interface{}(nil))
 			self.codec = &_codec
 
-			value = f["time_key"];
-			if len(value) > 0{
+			value = f["time_key"]
+			if len(value) > 0 {
 				self.time_key = value
-			}else{
+			} else {
 				self.time_key = "time"
 			}
 		}
@@ -175,25 +175,25 @@ func (self *inputTail) Run(runner InputRunner) error {
 						}
 					}
 				} else if self.format == "json" {
-					dec := codec.NewDecoderBytes([]byte(line.Text), self.codec);
-					err := dec.Decode(&pack.Msg.Data);
+					dec := codec.NewDecoderBytes([]byte(line.Text), self.codec)
+					err := dec.Decode(&pack.Msg.Data)
 					if err != nil {
 						log.Println("json.Unmarshal", err)
 						pack.Recycle()
 						continue
-					}else{
+					} else {
 						t, ok := pack.Msg.Data[self.time_key]
-						if(ok){
-							if time, xx := t.(uint64); xx{
+						if ok {
+							if time, xx := t.(uint64); xx {
 								pack.Msg.Timestamp = int64(time)
 								delete(pack.Msg.Data, self.time_key)
-							}else if time64, oo := t.(int64); oo{
+							} else if time64, oo := t.(int64); oo {
 								pack.Msg.Timestamp = time64
 								delete(pack.Msg.Data, self.time_key)
-							}else{
-								log.Println("time is not int64, ", t, " typeof:", reflect.TypeOf(t));
-								pack.Recycle();
-								continue;
+							} else {
+								log.Println("time is not int64, ", t, " typeof:", reflect.TypeOf(t))
+								pack.Recycle()
+								continue
 							}
 						}
 					}
