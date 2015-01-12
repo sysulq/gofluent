@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Gofluent : Something acting like fluentd rewritten in Go.">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Gofluent</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/hnlq715/gofluent">View on GitHub</a>
+
+          <h1 id="project_title">Gofluent</h1>
+          <h2 id="project_tagline">Something acting like fluentd rewritten in Go.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/hnlq715/gofluent/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/hnlq715/gofluent/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="gofluent" class="anchor" href="#gofluent" aria-hidden="true"><span class="octicon octicon-link"></span></a>gofluent</h1>
+
+<p>This program is something acting like fluentd rewritten in Go.</p>
+
+<h1>
+<a id="table-of-contents" class="anchor" href="#table-of-contents" aria-hidden="true"><span class="octicon octicon-link"></span></a>Table of Contents</h1>
+
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#architecture">Architecture</a></li>
+<li>
+<a href="#implementation">Implementation</a>
+
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#data-flow">Data flow</a></li>
+</ul>
+</li>
+<li>
+<a href="#plugins">Plugins</a>
+
+<ul>
+<li><a href="#tail-input-plugin">Tail Input Plugin</a></li>
+<li><a href="#httpsqs-output-plugin">Httpsqs Output Plugin</a></li>
+<li><a href="#stdout-output-plugin">Stdout Output Plugin</a></li>
+<li><a href="#mongodb-output-plugin">Mongodb Output Plugin</a></li>
+</ul>
+</li>
+</ul>
+
+<h1>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h1>
+
+<p>Fluentd is originally written in CRuby, which has too many dependecies.</p>
+
+<p>I hope fluentd to be simpler and cleaner, as its main feature is simplicity and rubostness.</p>
+
+<h1>
+<a id="architecture" class="anchor" href="#architecture" aria-hidden="true"><span class="octicon octicon-link"></span></a>Architecture</h1>
+
+<pre><code>    +---------+     +---------+     +---------+     +---------+
+    | server1 |     | server2 |     | server3 |     | serverN |
+    |---------|     |---------|     |---------|     |---------|
+    |         |     |         |     |         |     |         |
+    |---------|     |---------|     |---------|     |---------|
+    |gofluent |     |gofluent |     |gofluent |     |gofluent |
+    +---------+     +---------+     +---------+     +---------+
+        |               |               |               |
+         -----------------------------------------------
+                                |
+                                | HTTP POST
+                                V
+                        +-----------------+
+                        |                 |
+                        |      Httpmq     |
+                        |                 | 
+                        +-----------------+
+                                |
+                                | HTTP GET
+                                V 
+                        +-----------------+                 +-----------------+
+                        |                 |                 |                 |
+                        |   Preprocessor  | --------------&gt; |     Storage     |
+                        |                 |                 |                 | 
+                        +-----------------+                 +-----------------+
+</code></pre>
+
+<h1>
+<a id="implementation" class="anchor" href="#implementation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Implementation</h1>
+
+<h2>
+<a id="overview" class="anchor" href="#overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Overview</h2>
+
+<pre><code>Input -&gt; Router -&gt; Output
+</code></pre>
+
+<h2>
+<a id="data-flow" class="anchor" href="#data-flow" aria-hidden="true"><span class="octicon octicon-link"></span></a>Data flow</h2>
+
+<pre><code>                        -------&lt;-------- 
+                        |               |
+                        V               | generate pool
+       InputRunner.inputRecycleChan     | recycling
+            |           |               |     ^   
+            |            -------&gt;-------       \ 
+            |               ^           ^       \
+    InputRunner.inChan      |           |        \
+            |               |           |         \
+            |               |           |          \
+    consume |               |           |           \
+            V               |           |            \
+          Input(Router.inChan) ----&gt;  Router ----&gt; (Router.outChan)Output.inChan
+
+</code></pre>
+
+<h1>
+<a id="plugins" class="anchor" href="#plugins" aria-hidden="true"><span class="octicon octicon-link"></span></a>Plugins</h1>
+
+<h2>
+<a id="tail-input-plugin" class="anchor" href="#tail-input-plugin" aria-hidden="true"><span class="octicon octicon-link"></span></a>Tail Input Plugin</h2>
+
+<p>The in_tail input plugin allows gofluent to read events from the tail of text files. Its behavior is similar to the tail -F command.</p>
+
+<p>Example Configuration</p>
+
+<p>in_tail is included in gofluent’s core. No additional installation process is required.</p>
+
+<pre><code>&lt;source&gt;
+  type tail
+  path /var/log/httpd-access.log
+  pos_file /var/log/httpd-access.log.pos
+  tag apache.access
+  format /^(?&lt;host&gt;[^ ]*) [^ ]* (?&lt;user&gt;[^ ]*) \[(?&lt;time&gt;[^\]]*)\] "(?&lt;method&gt;\S+)(?: +(?&lt;path&gt;[^ ]*) +\S*)?" (?&lt;code&gt;[^ ]*) (?&lt;size&gt;[^ ]*)(?: "(?&lt;referer&gt;[^\"]*)" "(?&lt;agent&gt;[^\"]*)")?$/
+&lt;/source&gt;
+</code></pre>
+
+<p><em>type (required)</em>
+The value must be tail.</p>
+
+<p><em>tag (required)</em>
+The tag of the event.</p>
+
+<p><em>path (required)</em>
+The paths to read.</p>
+
+<p><em>format (required)</em>
+The format of the log. It is the name of a template or regexp surrounded by ‘/’.
+The regexp must have at least one named capture (?P&lt;NAME&gt;PATTERN).</p>
+
+<p>The following templates are supported:</p>
+
+<ul>
+<li>regexp</li>
+<li>json
+One JSON map, per line. This is the most straight forward format :).</li>
+</ul>
+
+<pre><code>format json
+</code></pre>
+
+<p><em>pos_file (highly recommended)</em>
+This parameter is highly recommended. gofluent will record the position it last read into this file.</p>
+
+<pre><code>pos_file /var/log/access.log.pos
+</code></pre>
+
+<p><em>sync_interval</em>
+The sync interval of pos file, default is 2s.</p>
+
+<h2>
+<a id="httpsqs-output-plugin" class="anchor" href="#httpsqs-output-plugin" aria-hidden="true"><span class="octicon octicon-link"></span></a>Httpsqs Output Plugin</h2>
+
+<p>The out_httpsqs output plugin allows gofluent to send data to httpsqs mq.</p>
+
+<p>Example Configuration</p>
+
+<p>out_httpsqs is included in gofluent’s core. No additional installation process is required.</p>
+
+<pre><code>&lt;match httpsqs.**&gt;
+  type httpsqs
+  host localhost
+  port 1218
+  flush_interval 10
+&lt;/match&gt;
+</code></pre>
+
+<p><em>type (required)</em>
+The value must be httpsqs.</p>
+
+<p><em>host (required)</em>
+The output target host ip.</p>
+
+<p><em>port (required)</em>
+The output target host port.</p>
+
+<p><em>auth (highly recommended)</em>
+The auth password for httpsqs.</p>
+
+<p><em>flush_interval</em>
+The flush interval for sending data to httpsqs.</p>
+
+<p><em>gzip</em>
+The gzip switch, default is on.</p>
+
+<h2>
+<a id="forward-output-plugin" class="anchor" href="#forward-output-plugin" aria-hidden="true"><span class="octicon octicon-link"></span></a>Forward Output Plugin</h2>
+
+<p>The out_forward output plugin allows gofluent to forward events to another gofluent.</p>
+
+<p>Example Configuration</p>
+
+<p>out_forward is included in gofluent’s core. No additional installation process is required.</p>
+
+<pre><code>&lt;match forward.**&gt;
+  type forward
+  host localhost
+  port 1218
+  flush_interval 10
+&lt;/match&gt;
+</code></pre>
+
+<p><em>type (required)</em>
+The value must be forward.</p>
+
+<p><em>host (required)</em>
+The output target host ip.</p>
+
+<p><em>port (required)</em>
+The output target host port.</p>
+
+<p><em>flush_interval</em>
+The flush interval for sending data to httpsqs.</p>
+
+<p><em>connect_timeout</em>
+The connect timeout value.</p>
+
+<p><em>sync_interval</em>
+The sync interval of metadata file, default is 2s.</p>
+
+<p><em>buffer_path(required)</em>
+The disk buffer path for output plugin, default is /tmp/test.</p>
+
+<p><em>buffer_queue_limit</em>
+The queue limit of disk buffer, default is 64M.</p>
+
+<p><em>buffer_chunk_limit</em>
+The chunk limit of disk buffer to forward, default is 8M.</p>
+
+<h2>
+<a id="stdout-output-plugin" class="anchor" href="#stdout-output-plugin" aria-hidden="true"><span class="octicon octicon-link"></span></a>Stdout Output Plugin</h2>
+
+<p>The out_stdout output plugin allows gofluent to print events to stdout.</p>
+
+<p>Example Configuration</p>
+
+<p>out_stdout is included in gofluent’s core. No additional installation process is required.</p>
+
+<pre><code>&lt;match stdout.**&gt;
+  type stdout
+&lt;/match&gt;
+</code></pre>
+
+<p><em>type (required)</em>
+The value must be stdout.</p>
+
+<h2>
+<a id="mongodb-output-plugin" class="anchor" href="#mongodb-output-plugin" aria-hidden="true"><span class="octicon octicon-link"></span></a>Mongodb Output Plugin</h2>
+
+<p>The out_mongodb output plugin allows gofluent to send message to mongodb.</p>
+
+<p>Example Configuration</p>
+
+<p>out_mongodb is included in gofluent's core. No additional installation process is required.</p>
+
+<pre><code>&lt;match mongodb.**&gt;
+  type mongodb
+  host localhost
+  port 27017
+  capped on
+  capped_size 1024
+  database test
+  collection test
+  user test
+  password test
+&lt;/match&gt;
+</code></pre>
+
+<p><em>type(required)</em> 
+The value must be mongodb.</p>
+
+<p><em>host (required)</em>
+The output target host ip.</p>
+
+<p><em>port (required)</em>
+The output target host port.</p>
+
+<p><em>capped (highly recommended)</em>
+To create a capped collection.</p>
+
+<p><em>capped_size</em>
+Specify the actual size(MB) of the capped collection.</p>
+
+<p><em>database(required)</em>
+The name of the database to be created or used.</p>
+
+<p><em>collection(required)</em>
+The name of the collection to be created or used.</p>
+
+<p><em>user(highly recommended)</em>
+The user name to login the database.</p>
+
+<p><em>password(highly recommended)</em>
+The password to login the database.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Gofluent maintained by <a href="https://github.com/hnlq715">hnlq715</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
