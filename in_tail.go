@@ -97,6 +97,11 @@ func (self *inputTail) Init(f map[string]string) error {
 }
 
 func (self *inputTail) Run(runner InputRunner) error {
+	defer func() {
+		if err := recover(); err != nil {
+			logs.Fatalln("recover panic at err:", err)
+		}
+	}()
 
 	var seek int
 	if self.offset > 0 {
