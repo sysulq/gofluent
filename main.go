@@ -13,6 +13,8 @@ type GlobalConfig struct {
 	PoolSize int
 }
 
+var logs *log.Logger
+
 func DefaultGC() *GlobalConfig {
 	gc := new(GlobalConfig)
 	gc.PoolSize = 1000
@@ -31,9 +33,10 @@ func main() {
 	}
 	defer f.Close()
 
-	multi := io.MultiWriter(f, os.Stdout)
+	w := io.MultiWriter(f, os.Stdout)
+	logs = log.New(w, "", log.Ldate|log.Ltime|log.Lshortfile)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-	log.SetOutput(multi)
+	log.SetOutput(w)
 
 	if *p != "" {
 		go func() {

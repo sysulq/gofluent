@@ -5,7 +5,6 @@ import (
 	"github.com/ugorji/go/codec"
 	"log"
 	"net"
-	"os"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -103,12 +102,10 @@ func (self *OutputForward) Init(config map[string]string) error {
 }
 
 func (self *OutputForward) Run(runner OutputRunner) error {
-	l := log.New(os.Stderr, "", log.LstdFlags)
-
 	sync_interval := time.Duration(self.sync_interval)
 	base := filepath.Base(self.buffer_path)
 	dir := filepath.Dir(self.buffer_path)
-	self.backend = newDiskQueue(base, dir, self.buffer_queue_limit, 2500, sync_interval*time.Second, l)
+	self.backend = newDiskQueue(base, dir, self.buffer_queue_limit, 2500, sync_interval*time.Second, logs)
 
 	tick := time.NewTicker(time.Second * time.Duration(self.flush_interval))
 
