@@ -175,7 +175,7 @@ func (self *inputTail) Run(runner InputRunner) error {
 					}
 
 					for i, name := range re.SubexpNames() {
-						if i != 0 {
+						if len(name) > 0 {
 							pack.Msg.Data[name] = string(text[i])
 						}
 					}

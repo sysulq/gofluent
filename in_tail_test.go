@@ -128,3 +128,40 @@ func TestSyncIntervalBug(t *testing.T) {
 	os.Remove(cf["path"])
 
 }
+
+func TestNamedRegexMatch(t *testing.T) {
+	cf := make(map[string]string)
+	cf["path"] = "/tmp/test.file"
+	cf["format"] = "/(^(?P<data>.*)), (?P<hello>.*)$/"
+	cf["tag"] = "test"
+	cf["sync_interval"] = "4"
+	cf["pos_file"] = "./test.pos"
+	tail := new(inputTail)
+	err := tail.Init(cf)
+	if err != nil {
+		t.Fail()
+	}
+
+	rChan := make(chan *PipelinePack)
+	InputRecycleChan := make(chan *PipelinePack, 1)
+	iPack := NewPipelinePack(InputRecycleChan)
+	InputRecycleChan <- iPack
+	iRunner := NewInputRunner(InputRecycleChan, rChan)
+
+	f, _ := os.OpenFile(cf["path"], os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+
+	go tail.Run(iRunner)
+	time.Sleep(1 * time.Second)
+	f.Write([]byte("test, world\n"))
+	f.Close()
+
+	pack := <-iRunner.RouterChan()
+
+	if len(pack.Msg.Data) == 3 {
+		t.Fatal(pack.Msg.Data)
+	}
+
+	os.Remove(cf["pos_file"])
+	os.Remove(cf["path"])
+
+}
