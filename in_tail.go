@@ -128,7 +128,10 @@ func (self *inputTail) Run(runner InputRunner) error {
 
 	var re regexp.Regexp
 	if string(self.format[0]) == string("/") || string(self.format[len(self.format)-1]) == string("/") {
-		re = *regexp.MustCompile(strings.Trim(self.format, "/"))
+		format := strings.Trim(self.format, "/")
+		trueformat := regexp.MustCompile("\\(\\?<").ReplaceAllString(format, "(?P<")
+		log.Printf("pos_file:%s, format:%s", self.path, trueformat)
+		re = *regexp.MustCompile(trueformat)
 		self.format = "regexp"
 	} else if self.format == "json" {
 
