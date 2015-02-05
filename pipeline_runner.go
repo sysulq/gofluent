@@ -32,6 +32,7 @@ func NewPipelinePack(recycleChan chan *PipelinePack) (pack *PipelinePack) {
 
 func (this *PipelinePack) Zero() {
 	this.MsgBytes = this.MsgBytes[:cap(this.MsgBytes)]
+	this.Msg.Data = make(map[string]interface{})
 	this.RefCount = 1
 }
 
