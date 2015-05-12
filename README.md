@@ -1,5 +1,6 @@
 gofluent
 ========
+[![wercker status](https://app.wercker.com/status/1908429c90a6d7bd437a63210fb1a97f/s "wercker status")](https://app.wercker.com/project/bykey/1908429c90a6d7bd437a63210fb1a97f)
 
 This program is something acting like fluentd rewritten in Go.
 
